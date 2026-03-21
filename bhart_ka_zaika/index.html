@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>भारत का जायका | India's Culinary Heritage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="recipes.js"></script>
+    <script src="recipes2.js"></script>
+    <script src="recipes3.js"></script>
+    <script src="recipes4.js"></script>
+    <script src="recipes5.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #E65100;
+            --secondary: #FF6D00;
+            --background: #FFF3E0;
+            --cards: #FFFFFF;
+            --text: #212121;
+            --text-light: #757575;
+            --accent: #4CAF50;
+            --veg: #4CAF50;
+            --non-veg: #f44336;
+            --shadow: 0 10px 40px rgba(0,0,0,0.15);
+            --radius: 20px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ========== SPLASH SCREEN ========== */
+        .splash-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+
+        .splash-screen.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite alternate;
+            box-shadow: 0 0 60px rgba(255, 107, 0, 0.5);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 40px rgba(255, 107, 0, 0.4); }
+            100% { box-shadow: 0 0 80px rgba(255, 107, 0, 0.8); }
+        }
+
+        .splash-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-top: 30px;
+            text-align: center;
+            animation: fadeInUp 1s ease;
+        }
+
+        .splash-subtitle {
+            color: #FFD700;
+            font-size: 1rem;
+            margin-top: 10px;
+            animation: fadeInUp 1s ease 0.3s both;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== INDIA MAP SCREEN ========== */
+        .map-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0f3460 100%);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .map-screen.active {
+            display: flex;
+        }
+
+        .map-header {
+            text-align: center;
+            padding: 30px 20px 10px;
+            z-index: 10;
+        }
+
+        .map-header h1 {
+            color: #FFD700;
+            font-size: 2rem;
+            font-weight: 800;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .map-header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        /* 3D India Map SVG */
+        .map-svg-container {
+            flex: 1;
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+            perspective: 1000px;
+        }
+
+        .india-map-3d {
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+            animation: mapRotate 20s ease-in-out infinite;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes mapRotate {
+            0%, 100% { transform: rotateX(5deg) rotateY(0deg); }
+            25% { transform: rotateX(3deg) rotateY(2deg); }
+            50% { transform: rotateX(5deg) rotateY(0deg); }
+            75% { transform: rotateX(3deg) rotateY(-2deg); }
+        }
+
+        .state-path-3d {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            stroke: rgba(255,255,255,0.5);
+            stroke-width: 1;
+        }
+
+        .state-path-3d:hover {
+            filter: brightness(1.3);
+            stroke: #FFD700;
+            stroke-width: 2;
+            transform: scale(1.02);
+            transform-origin: center;
+        }
+
+        .state-path-3d.selected {
+            stroke: #FFD700;
+            stroke-width: 3;
+            filter: brightness(1.5) drop-shadow(0 0 15px #FFD700);
+            animation: statePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes statePulse {
+            0%, 100% { filter: brightness(1.3) drop-shadow(0 0 10px currentColor); }
+            50% { filter: brightness(1.5) drop-shadow(0 0 25px currentColor); }
+        }
+
+        .state-label-3d {
+            font-size: 8px;
+            fill: white;
+            font-weight: 600;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Sound Toggle */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .sound-toggle:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
+        }
+
+        .sound-toggle.muted {
+            opacity: 0.5;
+        }
+
+        /* Selection Dialog */
+        .selection-dialog {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(26,26,46,0.98), rgba(26,26,46,0.95));
+            border-radius: 30px 30px 0 0;
+            padding: 30px;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            text-align: center;
+        }
+
+        .selection-dialog.active {
+            transform: translateY(0);
+        }
+
+        .selection-dialog h2 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .selection-dialog .state-emoji {
+            font-size: 3rem;
+            margin: 15px 0;
+        }
+
+        .selection-dialog .language-preview {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: inline-block;
+            margin: 15px 0;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .dialog-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .dialog-btn.primary {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+        }
+
+        .dialog-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .dialog-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        /* Skip Button */
+        .skip-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 10px 20px;
+            z-index: 50;
+        }
+
+        .skip-btn:hover {
+            color: white;
+        }
+
+        /* ========== MAIN APP ========== */
+        .app-container {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .app-container.visible {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .header-title h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .header-title p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: var(--cards);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Banner */
+        .banner {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 25px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .banner::before {
+            content: '';
+            position: absolute;
+            right: -50px;
+            top: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .banner h2 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .banner p {
+            opacity: 0.9;
+            position: relative;
+        }
+
+        .banner-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .banner-stat {
+            text-align: center;
+        }
+
+        .banner-stat .number {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .banner-stat .label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* Categories */
+        .category-chips {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+
+        .category-chip {
+            background: var(--cards);
+            border: 2px solid transparent;
+            border-radius: 25px;
+            padding: 10px 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .category-chip:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .category-chip.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Recipe Grid */
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding-bottom: 100px;
+        }
+
+        .recipe-card {
+            background: var(--cards);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: cardIn 0.5s ease backwards;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+
+        .recipe-card:active {
+            transform: scale(0.95);
+        }
+
+        .recipe-card-image {
+            position: relative;
+            height: 180px;
+            overflow: hidden;
+        }
+
+        .recipe-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .recipe-card:hover .recipe-card-image img {
+            transform: scale(1.1);
+        }
+
+        .recipe-card-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+        }
+
+        .veg-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--veg);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .non-veg-badge {
+            background: var(--non-veg);
+        }
+
+        .heart-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .heart-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .heart-btn.favorited {
+            background: #f44336;
+            animation: heartBurst 0.5s ease;
+        }
+
+        @keyframes heartBurst {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        .recipe-card-content {
+            padding: 15px;
+        }
+
+        .recipe-card-state {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .recipe-card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .recipe-card-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px 30px 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            position: relative;
+            height: 250px;
+        }
+
+        .modal-header img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-header-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .modal-tab {
+            padding: 10px 20px;
+            background: var(--background);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .modal-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .ingredient-item, .step-item, .tip-item {
+            padding: 12px 15px;
+            background: var(--background);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            flex: 1;
+        }
+
+        .flame-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .flame-high { background: #ffebee; color: #f44336; }
+        .flame-medium { background: #fff8e1; color: #f9a825; }
+        .flame-low { background: #e8f5e9; color: #4caf50; }
+        .flame-simmer { background: #f5f5f5; color: #9e9e9e; }
+
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .nutrition-item {
+            background: var(--background);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .nutrition-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .nutrition-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 8px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(230, 81, 0, 0.3);
+        }
+
+        .tab-btn:not(.active):hover {
+            background: var(--background);
+        }
+
+        /* States Grid */
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding-bottom: 100px;
+        }
+
+        .state-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .state-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .state-emoji {
+            font-size: 3rem;
+            width: 70px;
+            height: 70px;
+            background: var(--background);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .state-info h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .state-info p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        /* Food Emoji Fallback */
+        .food-emoji {
+            font-size: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+            background: linear-gradient(135deg, var(--background), #fff);
+            border-radius: var(--radius);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .recipe-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .banner-stats {
+                gap: 20px;
+            }
+
+            .tab-navigation {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH SCREEN -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-logo">🍛</div>
+        <h1 class="splash-title">भारत का जायका</h1>
+        <p class="splash-subtitle">India's Culinary Heritage</p>
+    </div>
+
+    <!-- INDIA MAP SCREEN -->
+    <div class="map-screen" id="mapScreen">
+        <!-- Sound Toggle -->
+        <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+        
+        <div class="map-header">
+            <h1>🌏 भारत का जायका</h1>
+            <p>Tap your state to select language • अपने राज्य पर टैप करें</p>
+        </div>
+
+        <div class="map-svg-container">
+            <svg class="india-map-3d" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+                <!-- Jammu & Kashmir -->
+                <path class="state-path-3d" data-lang="ks" data-name="कॉशुर" data-emoji="🏔️" data-state="Jammu & Kashmir"
+                    d="M120,5 L160,5 L175,20 L185,40 L170,55 L140,50 L115,35 Z"
+                    fill="#FF6D00"/>
+                <text class="state-label-3d" x="145" y="32">कॉशुर</text>
+                
+                <!-- Punjab -->
+                <path class="state-path-3d" data-lang="pa" data-name="ਪੰਜਾਬੀ" data-emoji="🏋️" data-state="Punjab"
+                    d="M110,55 L155,55 L165,65 L160,85 L130,90 L105,80 Z"
+                    fill="#F44336"/>
+                <text class="state-label-3d" x="135" y="75">ਪੰਜਾਬੀ</text>
+                
+                <!-- Himachal -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🏔️" data-state="Himachal"
+                    d="M155,35 L175,35 L180,55 L160,55 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="167" y="48">HP</text>
+                
+                <!-- Uttarakhand -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🏔️" data-state="Uttarakhand"
+                    d="M175,40 L200,40 L210,70 L185,70 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="192" y="58">हिंदी</text>
+                
+                <!-- Haryana -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🌾" data-state="Haryana"
+                    d="M115,90 L160,90 L165,110 L120,110 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="138" y="103">हिंदी</text>
+                
+                <!-- Delhi -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🏛️" data-state="Delhi"
+                    d="M155,95 L175,95 L175,115 L155,115 Z"
+                    fill="#E91E63"/>
+                <text class="state-label-3d" x="163" y="108">दिल्ली</text>
+                
+                <!-- Uttar Pradesh -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🕌" data-state="Uttar Pradesh"
+                    d="M180,75 L260,75 L275,130 L240,155 L180,140 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="220" y="115">हिंदी</text>
+                
+                <!-- Bihar -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🪷" data-state="Bihar"
+                    d="M260,85 L300,85 L310,125 L285,145 L260,130 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="278" y="115">हिंदी</text>
+                
+                <!-- Rajasthan -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🏰" data-state="Rajasthan"
+                    d="M65,95 L165,90 L170,170 L140,210 L80,195 L55,145 Z"
+                    fill="#FF5722"/>
+                <text class="state-label-3d" x="115" y="150">हिंदी</text>
+                
+                <!-- Gujarat -->
+                <path class="state-path-3d" data-lang="gu" data-name="ગુજરાતી" data-emoji="🪔" data-state="Gujarat"
+                    d="M50,200 L105,195 L115,260 L95,310 L55,300 L40,250 Z"
+                    fill="#8BC34A"/>
+                <text class="state-label-3d" x="72" y="255">ગુજરાતી</text>
+                
+                <!-- Madhya Pradesh -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🦚" data-state="Madhya Pradesh"
+                    d="M165,140 L245,135 L260,200 L245,260 L180,265 L165,200 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="205" y="200">हिंदी</text>
+                
+                <!-- Maharashtra -->
+                <path class="state-path-3d" data-lang="mr" data-name="मराठी" data-emoji="🏰" data-state="Maharashtra"
+                    d="M115,255 L165,250 L180,320 L165,385 L130,385 L110,320 Z"
+                    fill="#F44336"/>
+                <text class="state-label-3d" x="145" y="320">मराठी</text>
+                
+                <!-- Goa -->
+                <path class="state-path-3d" data-lang="kok" data-name="कोंकणी" data-emoji="🏖️" data-state="Goa"
+                    d="M140,380 L155,378 L157,400 L143,402 Z"
+                    fill="#795548"/>
+                <text class="state-label-3d" x="147" y="393">Konkani</text>
+                
+                <!-- Chhattisgarh -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🌲" data-state="Chhattisgarh"
+                    d="M245,175 L290,170 L305,230 L285,275 L245,265 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="268" y="225">हिंदी</text>
+                
+                <!-- Jharkhand -->
+                <path class="state-path-3d" data-lang="hi" data-name="हिंदी" data-emoji="🌳" data-state="Jharkhand"
+                    d="M275,155 L305,150 L315,195 L295,220 L270,210 Z"
+                    fill="#FF9800"/>
+                <text class="state-label-3d" x="288" y="185">हिंदी</text>
+                
+                <!-- West Bengal -->
+                <path class="state-path-3d" data-lang="bn" data-name="বাংলা" data-emoji="🌀" data-state="West Bengal"
+                    d="M295,145 L345,140 L360,190 L340,230 L300,220 L290,180 Z"
+                    fill="#2196F3"/>
+                <text class="state-label-3d" x="320" y="185">বাংলা</text>
+                
+                <!-- Odisha -->
+                <path class="state-path-3d" data-lang="or" data-name="ଓଡ଼ିଆ" data-emoji="🏛️" data-state="Odisha"
+                    d="M270,225 L310,220 L325,275 L305,320 L265,310 Z"
+                    fill="#9C27B0"/>
+                <text class="state-label-3d" x="290" y="270">ଓଡ଼ିଆ</text>
+                
+                <!-- Andhra Pradesh -->
+                <path class="state-path-3d" data-lang="te" data-name="తెలుగు" data-emoji="🏛️" data-state="Andhra Pradesh"
+                    d="M195,295 L250,290 L270,350 L245,400 L185,390 Z"
+                    fill="#FF5722"/>
+                <text class="state-label-3d" x="225" y="345">తెలుగు</text>
+                
+                <!-- Telangana -->
+                <path class="state-path-3d" data-lang="te" data-name="తెలుగు" data-emoji="🏯" data-state="Telangana"
+                    d="M210,270 L255,265 L270,295 L255,330 L210,325 Z"
+                    fill="#FF5722"/>
+                <text class="state-label-3d" x="235" y="300">తెలుగు</text>
+                
+                <!-- Karnataka -->
+                <path class="state-path-3d" data-lang="kn" data-name="ಕನ್ನಡ" data-emoji="🗿" data-state="Karnataka"
+                    d="M130,330 L185,325 L200,380 L185,430 L140,430 L115,385 Z"
+                    fill="#3F51B5"/>
+                <text class="state-label-3d" x="158" y="380">ಕನ್ನಡ</text>
+                
+                <!-- Tamil Nadu -->
+                <path class="state-path-3d" data-lang="ta" data-name="தமிழ்" data-emoji="🛕" data-state="Tamil Nadu"
+                    d="M190,400 L225,395 L240,460 L215,495 L185,480 L175,430 Z"
+                    fill="#9C27B0"/>
+                <text class="state-label-3d" x="205" y="450">தமிழ்</text>
+                
+                <!-- Kerala -->
+                <path class="state-path-3d" data-lang="ml" data-name="മലയാളം" data-emoji="🥥" data-state="Kerala"
+                    d="M145,420 L180,415 L185,465 L165,490 L140,475 L135,445 Z"
+                    fill="#4CAF50"/>
+                <text class="state-label-3d" x="158" y="455">മലയാളം</text>
+                
+                <!-- Northeast States -->
+                <!-- Assam -->
+                <path class="state-path-3d" data-lang="as" data-name="অসমীয়া" data-emoji="🐘" data-state="Assam"
+                    d="M335,95 L380,90 L395,120 L375,145 L340,140 Z"
+                    fill="#00BCD4"/>
+                <text class="state-label-3d" x="360" y="120">অসমীয়া</text>
+                
+                <!-- Sikkim -->
+                <path class="state-path-3d" data-lang="en" data-name="English" data-emoji="🏔️" data-state="Sikkim"
+                    d="M300,120 L320,115 L325,140 L310,150 Z"
+                    fill="#607D8B"/>
+                <text class="state-label-3d" x="310" y="135">Sikkim</text>
+                
+                <!-- Northeast Combined -->
+                <path class="state-path-3d" data-lang="en" data-name="English" data-emoji="🌿" data-state="Northeast"
+                    d="M360,145 L395,140 L405,175 L390,200 L360,195 Z"
+                    fill="#607D8B"/>
+                <text class="state-label-3d" x="378" y="170">NE</text>
+            </svg>
+        </div>
+
+        <!-- Skip Button -->
+        <button class="skip-btn" onclick="skipToApp('hi', 'हिंदी')">Skip - Use Hindi →</button>
+
+        <!-- Selection Dialog -->
+        <div class="selection-dialog" id="selectionDialog">
+            <h2 id="dialogTitle">Select Language</h2>
+            <div class="state-emoji" id="dialogEmoji">🏛️</div>
+            <div class="language-preview" id="dialogLanguage">हिंदी</div>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 10px;">Would you like to see recipes in this language?</p>
+            <div class="dialog-buttons">
+                <button class="dialog-btn secondary" onclick="selectLanguage('hi')">Use Hindi</button>
+                <button class="dialog-btn primary" id="confirmLangBtn" onclick="confirmLanguage()">Yes, Continue →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="app-container" id="appContainer">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">🍛</div>
+                <div class="header-title">
+                    <h1>भारत का जायका</h1>
+                    <p>29 States • 435+ Recipes</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="resetLanguage()" title="Change Language">🌐</button>
+                <button class="icon-btn" onclick="togglePlanner()" title="Meal Planner">📅</button>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation" id="tabNavigation">
+            <button class="tab-btn active" data-tab="recipes" onclick="switchTab('recipes')">🍽️ Recipes</button>
+            <button class="tab-btn" data-tab="states" onclick="switchTab('states')">🗺️ States</button>
+            <button class="tab-btn" data-tab="planner" onclick="switchTab('planner')">📅 Planner</button>
+        </div>
+
+        <!-- Recipes Section -->
+        <div id="recipesSection">
+            <!-- Banner -->
+            <div class="banner">
+                <h2>Discover India's Flavors 🍽️</h2>
+                <p>Explore authentic recipes from all 29 states</p>
+                <div class="banner-stats">
+                    <div class="banner-stat">
+                        <div class="number">29</div>
+                        <div class="label">States</div>
+                    </div>
+                    <div class="banner-stat">
+                        <div class="number">435+</div>
+                        <div class="label">Recipes</div>
+                    </div>
+                    <div class="banner-stat">
+                        <div class="number">22</div>
+                        <div class="label">Languages</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="category-chips" id="categoryChips">
+                <button class="category-chip active" data-category="all">🔥 All</button>
+                <button class="category-chip" data-category="breakfast">🌅 Breakfast</button>
+                <button class="category-chip" data-category="lunch">☀️ Lunch</button>
+                <button class="category-chip" data-category="dinner">🌙 Dinner</button>
+                <button class="category-chip" data-category="snacks">🍿 Snacks</button>
+                <button class="category-chip" data-category="sweets">🍮 Sweets</button>
+                <button class="category-chip" data-category="veg">🥬 Veg</button>
+                <button class="category-chip" data-category="nonveg">🍖 Non-Veg</button>
+                <button class="category-chip" data-category="home">🏠 Ghar Ki Recipe</button>
+            </div>
+
+            <!-- Recipe Grid -->
+            <div class="recipe-grid" id="recipeGrid"></div>
+        </div>
+
+        <!-- States Section -->
+        <div id="statesSection" style="display: none;">
+            <div class="banner" style="margin-bottom: 20px;">
+                <h2>🗺️ Explore by State</h2>
+                <p>Tap on a state to see its famous dishes</p>
+            </div>
+            <div class="states-grid" id="statesGrid"></div>
+        </div>
+
+        <!-- Planner Section -->
+        <div id="plannerSection" style="display: none;">
+            <div class="banner" style="margin-bottom: 20px;">
+                <h2>📅 Weekly Meal Planner</h2>
+                <p>Plan your meals for the week</p>
+            </div>
+            <div id="plannerContent">
+                <p style="text-align: center; color: #666;">Coming Soon!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Modal -->
+    <div class="modal-overlay" id="recipeModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <div id="modalImageContainer" style="width: 100%; height: 250px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #E65100, #FF6D00);">
+                    <span id="modalEmoji" style="font-size: 6rem;">🍛</span>
+                </div>
+                <button class="modal-close" onclick="closeModal()">×</button>
+                <div class="modal-header-overlay">
+                    <h2 id="modalTitle">Recipe Name</h2>
+                    <p id="modalState">📍 State</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="modal-tabs">
+                    <button class="modal-tab active" onclick="showTab('ingredients')">🥘 Ingredients</button>
+                    <button class="modal-tab" onclick="showTab('steps')">👨‍🍳 Steps</button>
+                    <button class="modal-tab" onclick="showTab('tips')">💡 Tips</button>
+                    <button class="modal-tab" onclick="showTab('nutrition')">📊 Nutrition</button>
+                </div>
+                
+                <div class="tab-content active" id="ingredientsTab"></div>
+                <div class="tab-content" id="stepsTab"></div>
+                <div class="tab-content" id="tipsTab"></div>
+                <div class="tab-content" id="nutritionTab"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== STATE DATA ==========
+        const STATES_DATA = {
+            'andhrapradesh': { name: 'Andhra Pradesh', emoji: '🏛️', lang: 'te', langName: 'తెలుగు' },
+            'arunachalpradesh': { name: 'Arunachal Pradesh', emoji: '⛰️', lang: 'en', langName: 'English' },
+            'assam': { name: 'Assam', emoji: '🐘', lang: 'as', langName: 'অসমীয়া' },
+            'bihar': { name: 'Bihar', emoji: '🪷', lang: 'hi', langName: 'हिंदी' },
+            'chhattisgarh': { name: 'Chhattisgarh', emoji: '🌲', lang: 'hi', langName: 'हिंदी' },
+            'delhi': { name: 'Delhi', emoji: '🏛️', lang: 'hi', langName: 'हिंदी' },
+            'goa': { name: 'Goa', emoji: '🏖️', lang: 'kok', langName: 'कोंकणी' },
+            'gujarat': { name: 'Gujarat', emoji: '🪔', lang: 'gu', langName: 'ગુજરાતી' },
+            'haryana': { name: 'Haryana', emoji: '🌾', lang: 'hi', langName: 'हिंदी' },
+            'himachal': { name: 'Himachal Pradesh', emoji: '🏔️', lang: 'hi', langName: 'हिंदी' },
+            'jammu': { name: 'Jammu & Kashmir', emoji: '🏔️', lang: 'ks', langName: 'कॉशुर' },
+            'jharkhand': { name: 'Jharkhand', emoji: '🌳', lang: 'hi', langName: 'हिंदी' },
+            'karnataka': { name: 'Karnataka', emoji: '🗿', lang: 'kn', langName: 'ಕನ್ನಡ' },
+            'kerala': { name: 'Kerala', emoji: '🥥', lang: 'ml', langName: 'മലയാളം' },
+            'madhya': { name: 'Madhya Pradesh', emoji: '🦚', lang: 'hi', langName: 'हिंदी' },
+            'maharashtra': { name: 'Maharashtra', emoji: '🏰', lang: 'mr', langName: 'मराठी' },
+            'manipur': { name: 'Manipur', emoji: '🌾', lang: 'mni', langName: 'মৈতৈলোন' },
+            'meghalaya': { name: 'Meghalaya', emoji: '⛰️', lang: 'en', langName: 'English' },
+            'nagaland': { name: 'Nagaland', emoji: '🔥', lang: 'en', langName: 'English' },
+            'odisha': { name: 'Odisha', emoji: '🏛️', lang: 'or', langName: 'ଓଡ଼ିଆ' },
+            'punjab': { name: 'Punjab', emoji: '🏋️', lang: 'pa', langName: 'ਪੰਜਾਬੀ' },
+            'rajasthan': { name: 'Rajasthan', emoji: '🏰', lang: 'hi', langName: 'हिंदी' },
+            'sikkim': { name: 'Sikkim', emoji: '🏔️', lang: 'en', langName: 'English' },
+            'tamilnadu': { name: 'Tamil Nadu', emoji: '🛕', lang: 'ta', langName: 'தமிழ்' },
+            'telangana': { name: 'Telangana', emoji: '🏯', lang: 'te', langName: 'తెలుగు' },
+            'tripura': { name: 'Tripura', emoji: '⛰️', lang: 'bn', langName: 'বাংলা' },
+            'uttarpradesh': { name: 'Uttar Pradesh', emoji: '🕌', lang: 'hi', langName: 'हिंदी' },
+            'uttarakhand': { name: 'Uttarakhand', emoji: '🏔️', lang: 'hi', langName: 'हिंदी' },
+            'westbengal': { name: 'West Bengal', emoji: '🌀', lang: 'bn', langName: 'বাংলা' }
+        };
+
+        // ========== RECIPES LOADED FROM EXTERNAL FILES ==========
+        // recipes.js through recipes5.js are loaded in head
+        // Use indianRecipes.states for all recipes
+        /* const RECIPES = [
+            {
+                name: "Dal Tadka",
+                state: "uttarpradesh",
+                type: "Vegetarian",
+                category: "lunch",
+                prepTime: "10 mins",
+                cookTime: "25 mins",
+                difficulty: "Easy",
+                emoji: "🍛",
+                ingredients: [
+                    "2 cups toor dal (arhar dal)",
+                    "1 large onion, finely chopped",
+                    "2 tomatoes, finely chopped",
+                    "4 cloves garlic, minced",
+                    "1 inch ginger, grated",
+                    "2 green chilies, slit",
+                    "1 tsp cumin seeds",
+                    "1/2 tsp turmeric",
+                    "1 tsp red chili powder",
+                    "2 tbsp ghee",
+                    "1 tbsp fresh coriander, chopped",
+                    "Salt to taste"
+                ],
+                steps: [
+                    { text: "Wash dal thoroughly and soak for 15 minutes", flame: null, time: "15 mins" },
+                    { text: "Pressure cook dal with turmeric, salt and 3 cups water for 15 minutes on 🔴 High Flame", flame: "high", time: "15 mins" },
+                    { text: "Heat ghee in a pan on 🔴 High Flame until melted", flame: "high", time: "2 mins" },
+                    { text: "Add cumin seeds and let them splutter", flame: "high", time: "1 min" },
+                    { text: "Add garlic and ginger, sauté until fragrant on 🟡 Medium Flame", flame: "medium", time: "3 mins" },
+                    { text: "Add onions and fry until golden brown", flame: "medium", time: "8 mins" },
+                    { text: "Add tomatoes and green chilies, cook until soft", flame: "medium", time: "5 mins" },
+                    { text: "Add red chili powder, mix well", flame: "low", time: "2 mins" },
+                    { text: "Pour the tempering over cooked dal, mix gently", flame: null, time: "2 mins" },
+                    { text: "Garnish with fresh coriander and serve hot with rice or roti", flame: null, time: "1 min" }
+                ],
+                tips: [
+                    "Always use fresh ghee for authentic flavor",
+                    "Dal should be slightly thick, not too watery",
+                    "Fry onions until deep golden for best taste",
+                    "Add a pinch of asafetida for digestion",
+                    "Rest dal for 5 minutes before serving for flavors to meld"
+                ],
+                nutrition: { calories: 245, protein: "12g", carbs: "35g", fat: "8g", fiber: "6g" },
+                image: "dal-tadka"
+            },
+            {
+                name: "Masala Dosa",
+                state: "karnataka",
+                type: "Vegetarian",
+                category: "breakfast",
+                prepTime: "8 hours",
+                cookTime: "20 mins",
+                difficulty: "Medium",
+                emoji: "🥞",
+                ingredients: [
+                    "3 cups rice",
+                    "1 cup urad dal",
+                    "1/2 tsp fenugreek seeds",
+                    "4 large potatoes, boiled and mashed",
+                    "2 onions, thinly sliced",
+                    "2 green chilies",
+                    "1 inch ginger, grated",
+                    "1 tsp turmeric",
+                    "1 tsp mustard seeds",
+                    "10 curry leaves",
+                    "2 tbsp oil",
+                    "Ghee for cooking",
+                    "Salt to taste"
+                ],
+                steps: [
+                    { text: "Soak rice and urad dal separately with fenugreek seeds for 8 hours", flame: null, time: "8 hours" },
+                    { text: "Grind urad dal to smooth batter using water as needed", flame: null, time: "10 mins" },
+                    { text: "Grind rice to smooth batter, mix with urad dal batter", flame: null, time: "10 mins" },
+                    { text: "Ferment batter overnight or for 8 hours until frothy", flame: null, time: "8 hours" },
+                    { text: "For aloo masala: heat oil on 🔴 High Flame", flame: "high", time: "2 mins" },
+                    { text: "Add mustard seeds, let splutter", flame: "high", time: "1 min" },
+                    { text: "Add curry leaves, onions, green chilies, ginger on 🟡 Medium Flame", flame: "medium", time: "5 mins" },
+                    { text: "Add turmeric and mashed potatoes, mix well", flame: "medium", time: "3 mins" },
+                    { text: "Heat dosa tawa on 🔴 High Flame until very hot", flame: "high", time: "3 mins" },
+                    { text: "Pour batter and spread in circular motion to thin crepe", flame: "medium", time: "2 mins" },
+                    { text: "Drizzle ghee around edges, cook until crispy", flame: "medium", time: "3 mins" },
+                    { text: "Place aloo masala in center, fold dosa and serve with coconut chutney", flame: null, time: "1 min" }
+                ],
+                tips: [
+                    "Batter should be fermented well for crispy dosas",
+                    "Tawa should be very hot before pouring batter",
+                    "Spread batter quickly in one direction for thin crispy dosa",
+                    "Add a little water to batter if too thick",
+                    "Fermentation makes dosas crispy and light"
+                ],
+                nutrition: { calories: 285, protein: "8g", carbs: "52g", fat: "6g", fiber: "4g" },
+                image: "masala-dosa"
+            },
+            {
+                name: "Puran Poli",
+                state: "maharashtra",
+                type: "Vegetarian",
+                category: "sweets",
+                prepTime: "30 mins",
+                cookTime: "45 mins",
+                difficulty: "Hard",
+                emoji: "🥮",
+                ingredients: [
+                    "2 cups chana dal (soaked overnight)",
+                    "1.5 cups jaggery, grated",
+                    "1 tsp cardamom powder",
+                    "2 cups whole wheat flour",
+                    "1/2 cup water",
+                    "1/4 cup ghee",
+                    "1/2 tsp turmeric",
+                    "Salt to taste",
+                    "Ghee for serving"
+                ],
+                steps: [
+                    { text: "Pressure cook chana dal with water until very soft and mushy", flame: "high", time: "20 mins" },
+                    { text: "Drain excess water and mash dal until smooth", flame: null, time: "5 mins" },
+                    { text: "Heat kadai on 🟢 Low Flame, add mashed dal", flame: "low", time: "2 mins" },
+                    { text: "Add jaggery gradually, stirring continuously", flame: "low", time: "15 mins" },
+                    { text: "Cook until mixture becomes thick and leaves sides of pan", flame: "low", time: "20 mins" },
+                    { text: "Add cardamom powder, mix well and remove from heat", flame: null, time: "2 mins" },
+                    { text: "For dough: mix flour with turmeric, salt, 2 tbsp ghee and water", flame: null, time: "5 mins" },
+                    { text: "Knead into smooth soft dough, rest for 20 minutes", flame: null, time: "20 mins" },
+                    { text: "Take small dough ball, flatten, place puran filling in center", flame: null, time: "5 mins" },
+                    { text: "Seal edges and roll into thin circle", flame: null, time: "5 mins" },
+                    { text: "Cook on hot tawa on 🔴 Medium Flame, applying ghee", flame: "medium", time: "3 mins per side" },
+                    { text: "Serve hot with ghee drizzled on top", flame: null, time: "1 min" }
+                ],
+                tips: [
+                    "Dal must be cooked very soft for smooth puran",
+                    "Jaggery mixture should be dry, not sticky",
+                    "Roll poli very thin for authentic taste",
+                    "Apply ghee generously while cooking",
+                    "Traditional Ganesh Chaturthi sweet"
+                ],
+                nutrition: { calories: 325, protein: "10g", carbs: "58g", fat: "9g", fiber: "5g" },
+                image: "puran-poli"
+            },
+            {
+                name: "Machher Jhol",
+                state: "westbengal",
+                type: "Non-Vegetarian",
+                category: "lunch",
+                prepTime: "20 mins",
+                cookTime: "35 mins",
+                difficulty: "Medium",
+                emoji: "🐟",
+                ingredients: [
+                    "500g Rohu fish, cut into pieces",
+                    "3 medium potatoes, cubed",
+                    "2 tomatoes, chopped",
+                    "1 large onion, sliced",
+                    "2 green chilies",
+                    "1 inch ginger, julienned",
+                    "1 tsp turmeric",
+                    "1 tsp cumin powder",
+                    "1 tsp red chili powder",
+                    "2 tbsp mustard oil",
+                    "Fresh coriander leaves",
+                    "Salt to taste"
+                ],
+                steps: [
+                    { text: "Marinate fish with 1/2 tsp turmeric and salt for 10 minutes", flame: null, time: "10 mins" },
+                    { text: "Heat mustard oil in a kadai on 🔴 High Flame until smoking", flame: "high", time: "3 mins" },
+                    { text: "Reduce to 🟡 Medium Flame, fry fish pieces until light golden", flame: "medium", time: "5 mins" },
+                    { text: "Remove fish, in same oil add onion slices and fry until translucent", flame: "medium", time: "4 mins" },
+                    { text: "Add ginger, garlic, green chilies, sauté for 2 minutes", flame: "medium", time: "2 mins" },
+                    { text: "Add tomatoes and dry spices, cook until tomatoes are soft", flame: "medium", time: "5 mins" },
+                    { text: "Add potatoes and 2 cups water, cover and cook until potatoes are tender", flame: "medium", time: "10 mins" },
+                    { text: "Gently add fried fish pieces, simmer on 🟢 Low Flame", flame: "simmer", time: "8 mins" },
+                    { text: "DO NOT stir after adding fish, just swirl the pot gently", flame: null, time: "1 min" },
+                    { text: "Adjust salt, add coriander leaves and serve hot with steamed rice", flame: null, time: "1 min" }
+                ],
+                tips: [
+                    "Use fresh river fish for authentic Bengali taste",
+                    "Mustard oil is essential for proper flavor",
+                    "Never stir fish after adding to gravy",
+                    "Fish should be added just before serving",
+                    "Tangy and light gravy is signature Bengali style"
+                ],
+                nutrition: { calories: 325, protein: "32g", carbs: "22g", fat: "14g", fiber: "3g" },
+                image: "machher-jhol"
+            },
+            {
+                name: "Rasgulla",
+                state: "westbengal",
+                type: "Vegetarian",
+                category: "sweets",
+                prepTime: "30 mins",
+                cookTime: "25 mins",
+                difficulty: "Hard",
+                emoji: "🍮",
+                ingredients: [
+                    "1 liter full cream milk",
+                    "2 tbsp lemon juice",
+                    "1.5 cups sugar",
+                    "4 cups water",
+                    "1/4 tsp cardamom powder",
+                    "Few strands saffron (optional)",
+                    "Rose water (few drops)"
+                ],
+                steps: [
+                    { text: "Boil milk on 🔴 High Flame, stirring occasionally", flame: "high", time: "10 mins" },
+                    { text: "Add lemon juice gradually while stirring, until milk curdles", flame: "medium", time: "3 mins" },
+                    { text: "Once whey separates completely, remove from heat", flame: null, time: "1 min" },
+                    { text: "Strain through muslin cloth, wash chhena with cold water", flame: null, time: "3 mins" },
+                    { text: "Hang for 30 minutes to remove all water", flame: null, time: "30 mins" },
+                    { text: "Knead chhena for 10 minutes until smooth and elastic", flame: null, time: "10 mins" },
+                    { text: "Make small balls by rolling between palms", flame: null, time: "5 mins" },
+                    { text: "Make sugar syrup: boil water and sugar on 🔴 High Flame", flame: "high", time: "5 mins" },
+                    { text: "Reduce to 🟡 Medium Flame, add chhena balls to syrup", flame: "medium", time: "1 min" },
+                    { text: "Cover and cook for 15 minutes, balls will double in size", flame: "simmer", time: "15 mins" },
+                    { text: "Add cardamom and rose water, cool completely before serving", flame: null, time: "1 min" }
+                ],
+                tips: [
+                    "Chhena should be kneaded until very smooth",
+                    "Balls should be smooth without cracks",
+                    "Sugar syrup should be thin consistency",
+                    "Fresh rasgullas are soft and spongy",
+                    "Can be stored in refrigerator for 3-4 days"
+                ],
+                nutrition: { calories: 185, protein: "6g", carbs: "32g", fat: "4g", fiber: "0g" },
+                image: "rasgulla"
+            },
+            {
+                name: "Chole Bhature",
+                state: "delhi",
+                type: "Vegetarian",
+                category: "lunch",
+                prepTime: "8 hours",
+                cookTime: "40 mins",
+                difficulty: "Medium",
+                emoji: "🍛",
+                ingredients: [
+                    "2 cups chickpeas (soaked overnight)",
+                    "2 large onions, finely chopped",
+                    "2 tomatoes, pureed",
+                    "2 potatoes, cubed",
+                    "2 tbsp chole masala",
+                    "1 tsp cumin seeds",
+                    "1 tsp coriander powder",
+                    "1/2 tsp amchur powder",
+                    "1 tsp turmeric",
+                    "1 tsp ginger powder",
+                    "2 tbsp oil",
+                    "2 cups maida flour",
+                    "1/2 cup yogurt",
+                    "1 tsp baking soda",
+                    "Salt to taste"
+                ],
+                steps: [
+                    { text: "Pressure cook chickpeas with potatoes, turmeric and salt for 20 minutes", flame: "high", time: "20 mins" },
+                    { text: "Heat oil in kadai on 🔴 High Flame", flame: "high", time: "2 mins" },
+                    { text: "Add cumin seeds, let splutter", flame: "high", time: "1 min" },
+                    { text: "Add onions, fry until golden brown", flame: "medium", time: "8 mins" },
+                    { text: "Add tomato puree, cook until oil separates", flame: "medium", time: "8 mins" },
+                    { text: "Add all spices including chole masala, cook for 2 minutes", flame: "medium", time: "2 mins" },
+                    { text: "Add cooked chickpeas with water, simmer for 15 minutes", flame: "simmer", time: "15 mins" },
+                    { text: "For bhature: mix flour, yogurt, baking soda, salt to make soft dough", flame: null, time: "5 mins" },
+                    { text: "Rest dough for 30 minutes", flame: null, time: "30 mins" },
+                    { text: "Make medium balls, roll thick, fry in hot oil on 🔴 High Flame", flame: "high", time: "3 mins per bhatura" },
+                    { text: "Bhature should puff up like puri, serve hot with chole", flame: null, time: "1 min" }
+                ],
+                tips: [
+                    "Chickpeas should be soaked at least 8 hours",
+                    "Gravy should be thick and spicy",
+                    "Oil should be very hot for puffy bhature",
+                    "Serve immediately while bhature is crispy",
+                    "Add onion rings and green chutney as accompaniments"
+                ],
+                nutrition: { calories: 425, protein: "14g", carbs: "62g", fat: "16g", fiber: "10g" },
+                image: "chole-bhature"
+            }
+        ]; */
+
+        // ========== APP STATE ==========
+        let currentCategory = 'all';
+        let currentLang = localStorage.getItem('selectedLanguage') || 'hi';
+        let selectedStateLang = null;
+        let soundEnabled = true;
+        let audioContext = null;
+        let currentTab = 'recipes';
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show splash for 3 seconds
+            setTimeout(() => {
+                document.getElementById('splashScreen').classList.add('hidden');
+                
+                if (!localStorage.getItem('selectedLanguage')) {
+                    document.getElementById('mapScreen').classList.add('active');
+                    playFluteSound();
+                } else {
+                    showApp();
+                }
+            }, 3000);
+
+            // Setup map interactions
+            setupMapInteractions();
+            
+            // Setup category filters
+            setupCategories();
+        });
+
+        // ========== SOUND ==========
+        function playFluteSound() {
+            if (!soundEnabled) return;
+            
+            try {
+                // Create simple audio using Web Audio API
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Play a simple melody (placeholder for flute)
+                playNote(523, 0.5); // C5
+                setTimeout(() => playNote(659, 0.5), 500); // E5
+                setTimeout(() => playNote(784, 0.5), 1000); // G5
+                setTimeout(() => playNote(1047, 1), 1500); // C6
+                
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function playNote(frequency, duration) {
+            if (!audioContext || !soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+            btn.classList.toggle('muted', !soundEnabled);
+            
+            if (soundEnabled && audioContext) {
+                playFluteSound();
+            }
+        }
+
+        // ========== MAP INTERACTIONS ==========
+        function setupMapInteractions() {
+            const statePaths = document.querySelectorAll('.state-path-3d');
+            
+            statePaths.forEach(path => {
+                path.addEventListener('click', () => {
+                    // Play tap sound
+                    if (soundEnabled) playNote(880, 0.1);
+                    
+                    // Remove previous selection
+                    statePaths.forEach(p => p.classList.remove('selected'));
+                    
+                    // Add selection
+                    path.classList.add('selected');
+                    
+                    // Show dialog
+                    const lang = path.dataset.lang;
+                    const langName = path.dataset.name;
+                    const emoji = path.dataset.emoji || '🏛️';
+                    
+                    document.getElementById('dialogTitle').textContent = path.dataset.state;
+                    document.getElementById('dialogEmoji').textContent = emoji;
+                    document.getElementById('dialogLanguage').textContent = langName;
+                    document.getElementById('confirmLangBtn').onclick = () => confirmLanguageWithState(lang, langName);
+                    
+                    document.getElementById('selectionDialog').classList.add('active');
+                });
+            });
+        }
+
+        function selectLanguage(lang) {
+            confirmLanguageWithState(lang, 'हिंदी');
+        }
+
+        function confirmLanguageWithState(lang, langName) {
+            localStorage.setItem('selectedLanguage', lang);
+            selectedStateLang = { lang, langName };
+            
+            document.getElementById('selectionDialog').classList.remove('active');
+            
+            setTimeout(() => {
+                document.getElementById('mapScreen').classList.remove('active');
+                showApp();
+            }, 300);
+        }
+
+        function skipToApp(lang, langName) {
+            localStorage.setItem('selectedLanguage', lang);
+            selectedStateLang = { lang, langName };
+            document.getElementById('mapScreen').classList.remove('active');
+            showApp();
+        }
+
+        function confirmLanguage() {
+            if (selectedStateLang) {
+                confirmLanguageWithState(selectedStateLang.lang, selectedStateLang.langName);
+            }
+        }
+
+        function showMap() {
+            document.getElementById('mapScreen').classList.add('active');
+        }
+
+        // Clear language selection to show map on next visit
+        function resetLanguage() {
+            localStorage.removeItem('selectedLanguage');
+            location.reload();
+        }
+
+        // ========== MAIN APP ==========
+        function showApp() {
+            const app = document.getElementById('appContainer');
+            app.classList.add('visible');
+            renderRecipes();
+            renderStates();
+        }
+
+        // ========== TAB SWITCHING ==========
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            
+            // Show/hide sections
+            document.getElementById('recipesSection').style.display = tab === 'recipes' ? 'block' : 'none';
+            document.getElementById('statesSection').style.display = tab === 'states' ? 'block' : 'none';
+            document.getElementById('plannerSection').style.display = tab === 'planner' ? 'block' : 'none';
+        }
+
+        // ========== RENDER STATES ==========
+        function renderStates() {
+            const grid = document.getElementById('statesGrid');
+            grid.innerHTML = '';
+            
+            if (typeof indianRecipes !== 'undefined' && indianRecipes.states) {
+                indianRecipes.states.forEach((state, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'state-card';
+                    card.style.animationDelay = `${index * 50}ms`;
+                    card.innerHTML = `
+                        <div class="state-emoji">${state.emoji}</div>
+                        <div class="state-info">
+                            <h4>${state.name}</h4>
+                            <p>${state.recipes.length} recipes</p>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => {
+                        switchTab('recipes');
+                        filterByState(state);
+                    });
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // Filter recipes by state
+        function filterByState(state) {
+            currentCategory = 'all';
+            document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+            document.querySelector('.category-chip[data-category="all"]').classList.add('active');
+            
+            const grid = document.getElementById('recipeGrid');
+            grid.innerHTML = '';
+            
+            state.recipes.forEach((recipe, index) => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.style.animationDelay = `${index * 100}ms`;
+                
+                const recipeName = recipe.names ? (recipe.names[currentLang] || recipe.names.en || recipe.names.hi || recipe.name) : recipe.name;
+                const imageUrl = recipe.image_url || recipeName.toLowerCase().replace(/\s+/g, '-');
+                
+                card.innerHTML = `
+                    <div class="recipe-card-image">
+                        <div class="food-emoji">${recipe.emoji || '🍛'}</div>
+                        <span class="veg-badge ${recipe.type === 'Non-Vegetarian' ? 'non-veg-badge' : ''}">
+                            ${recipe.type === 'Vegetarian' ? '🥬 Veg' : '🍖 Non-Veg'}
+                        </span>
+                        <button class="heart-btn" onclick="toggleFavorite(event, '${recipeName.replace(/'/g, "\\'")}')">🤍</button>
+                    </div>
+                    <div class="recipe-card-content">
+                        <div class="recipe-card-state">${state.emoji} ${state.name}</div>
+                        <h3 class="recipe-card-title">${recipeName}</h3>
+                        <div class="recipe-card-meta">
+                            <span>⏱️ ${recipe.prepTime} + ${recipe.cookTime}</span>
+                            <span>📊 ${recipe.difficulty}</span>
+                        </div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => openRecipeModalFromState(recipe, state));
+                grid.appendChild(card);
+            });
+        }
+
+        function openRecipeModalFromState(recipe, state) {
+            const recipeName = recipe.names ? (recipe.names[currentLang] || recipe.names.en || recipe.names.hi || recipe.name) : recipe.name;
+            
+            document.getElementById('modalImage').src = '';
+            document.getElementById('modalTitle').textContent = recipeName;
+            document.getElementById('modalState').textContent = `${state.emoji} ${state.name}`;
+            
+            // Ingredients
+            document.getElementById('ingredientsTab').innerHTML = recipe.ingredients.map(i => 
+                `<div class="ingredient-item"><span>🥘</span><span>${i}</span></div>`
+            ).join('');
+            
+            // Steps
+            document.getElementById('stepsTab').innerHTML = recipe.steps.map((s, i) => `
+                <div class="step-item">
+                    <div class="step-number">${i + 1}</div>
+                    <div class="step-text">
+                        ${s.text}
+                        ${s.flame ? `<span class="flame-chip flame-${s.flame}">
+                            ${s.flame === 'high' ? '🔴' : s.flame === 'medium' ? '🟡' : s.flame === 'low' ? '🟢' : '⚫'}
+                            ${s.flame.charAt(0).toUpperCase() + s.flame.slice(1)} Flame
+                        </span>` : ''}
+                        ${s.time ? `<span style="color: #666; font-size: 0.8rem; margin-left: 10px;">⏱️ ${s.time}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Tips
+            document.getElementById('tipsTab').innerHTML = recipe.tips.map(t => 
+                `<div class="tip-item"><span>💡</span><span>${t}</span></div>`
+            ).join('');
+            
+            // Nutrition
+            document.getElementById('nutritionTab').innerHTML = `
+                <div class="nutrition-grid">
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.calories}</div>
+                        <div class="nutrition-label">Calories</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.protein}g</div>
+                        <div class="nutrition-label">Protein</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.carbs}g</div>
+                        <div class="nutrition-label">Carbs</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.fat}g</div>
+                        <div class="nutrition-label">Fat</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.fiber}g</div>
+                        <div class="nutrition-label">Fiber</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.difficulty}</div>
+                        <div class="nutrition-label">Level</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('recipeModal').classList.add('active');
+            showTab('ingredients');
+        }
+
+        // ========== RECIPES ==========
+        function renderRecipes() {
+            const grid = document.getElementById('recipeGrid');
+            grid.innerHTML = '';
+            
+            // Get all recipes from indianRecipes.states
+            let allRecipes = [];
+            if (typeof indianRecipes !== 'undefined' && indianRecipes.states) {
+                allRecipes = indianRecipes.states.flatMap(state => 
+                    state.recipes.map(recipe => ({...recipe, state: state.id, stateName: state.name, stateEmoji: state.emoji}))
+                );
+            }
+            
+            let filtered = allRecipes;
+            
+            if (currentCategory !== 'all') {
+                filtered = allRecipes.filter(r => {
+                    if (currentCategory === 'veg') return r.type === 'Vegetarian';
+                    if (currentCategory === 'nonveg') return r.type === 'Non-Vegetarian';
+                    if (currentCategory === 'home') {
+                        const homeWords = ['dal', 'roti', 'sabzi', 'rice', 'pulao', 'curry', 'parantha', 'poha'];
+                        return homeWords.some(word => r.name.toLowerCase().includes(word));
+                    }
+                    return r.category === currentCategory;
+                });
+            }
+            
+            filtered.forEach((recipe, index) => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.style.animationDelay = `${index * 100}ms`;
+                
+                // Handle both names object and simple name
+                const recipeName = recipe.names ? (recipe.names[currentLang] || recipe.names.en || recipe.names.hi || recipe.name) : recipe.name;
+                const stateInfo = STATES_DATA[recipe.state] || {};
+                
+                card.innerHTML = `
+                    <div class="recipe-card-image">
+                        <div class="food-emoji">${recipe.emoji || '🍛'}</div>
+                        <span class="veg-badge ${recipe.type === 'Non-Vegetarian' ? 'non-veg-badge' : ''}">
+                            ${recipe.type === 'Vegetarian' ? '🥬 Veg' : '🍖 Non-Veg'}
+                        </span>
+                        <button class="heart-btn" onclick="toggleFavorite(event, '${recipeName.replace(/'/g, "\\'")}')">🤍</button>
+                    </div>
+                    <div class="recipe-card-content">
+                        <div class="recipe-card-state">${recipe.stateEmoji || stateInfo.emoji || recipe.emoji || '🏛️'} ${recipe.stateName || stateInfo.name || recipe.state}</div>
+                        <h3 class="recipe-card-title">${recipeName}</h3>
+                        <div class="recipe-card-meta">
+                            <span>⏱️ ${recipe.prepTime} + ${recipe.cookTime}</span>
+                            <span>📊 ${recipe.difficulty}</span>
+                        </div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => openRecipeModal(recipe));
+                grid.appendChild(card);
+            });
+        }
+
+        function setupCategories() {
+            document.querySelectorAll('.category-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    currentCategory = chip.dataset.category;
+                    renderRecipes();
+                });
+            });
+        }
+
+        // ========== RECIPE MODAL ==========
+        function openRecipeModal(recipe) {
+            // Handle both names object and simple name
+            const recipeName = recipe.names ? (recipe.names[currentLang] || recipe.names.en || recipe.names.hi || recipe.name) : recipe.name;
+            const stateInfo = STATES_DATA[recipe.state] || {};
+            
+            document.getElementById('modalEmoji').textContent = recipe.emoji || '🍛';
+            document.getElementById('modalTitle').textContent = recipeName;
+            document.getElementById('modalState').textContent = `${recipe.stateEmoji || stateInfo.emoji || recipe.emoji || '🏛️'} ${recipe.stateName || stateInfo.name || recipe.state}`;
+            
+            // Ingredients
+            document.getElementById('ingredientsTab').innerHTML = recipe.ingredients.map(i => 
+                `<div class="ingredient-item"><span>🥘</span><span>${i}</span></div>`
+            ).join('');
+            
+            // Steps
+            document.getElementById('stepsTab').innerHTML = recipe.steps.map((s, i) => `
+                <div class="step-item">
+                    <div class="step-number">${i + 1}</div>
+                    <div class="step-text">
+                        ${s.text}
+                        ${s.flame ? `<span class="flame-chip flame-${s.flame}">
+                            ${s.flame === 'high' ? '🔴' : s.flame === 'medium' ? '🟡' : s.flame === 'low' ? '🟢' : '⚫'}
+                            ${s.flame.charAt(0).toUpperCase() + s.flame.slice(1)} Flame
+                        </span>` : ''}
+                        ${s.time ? `<span style="color: #666; font-size: 0.8rem; margin-left: 10px;">⏱️ ${s.time}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Tips
+            document.getElementById('tipsTab').innerHTML = recipe.tips.map(t => 
+                `<div class="tip-item"><span>💡</span><span>${t}</span></div>`
+            ).join('');
+            
+            // Nutrition
+            document.getElementById('nutritionTab').innerHTML = `
+                <div class="nutrition-grid">
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.calories}</div>
+                        <div class="nutrition-label">Calories</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.protein}</div>
+                        <div class="nutrition-label">Protein</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.carbs}</div>
+                        <div class="nutrition-label">Carbs</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.fat}</div>
+                        <div class="nutrition-label">Fat</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.nutrition.fiber}</div>
+                        <div class="nutrition-label">Fiber</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${recipe.difficulty}</div>
+                        <div class="nutrition-label">Level</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('recipeModal').classList.add('active');
+            showTab('ingredients');
+        }
+
+        function closeModal() {
+            document.getElementById('recipeModal').classList.remove('active');
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            document.querySelector(`.modal-tab[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+
+        function toggleFavorite(event, recipeName) {
+            event.stopPropagation();
+            const btn = event.currentTarget;
+            btn.classList.toggle('favorited');
+            btn.textContent = btn.classList.contains('favorited') ? '❤️' : '🤍';
+            
+            // Play heart animation
+            if (btn.classList.contains('favorited')) {
+                playNote(523, 0.2);
+                setTimeout(() => playNote(659, 0.2), 100);
+            }
+        }
+
+        function togglePlanner() {
+            alert('Meal Planner coming soon! 📅');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('recipeModal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

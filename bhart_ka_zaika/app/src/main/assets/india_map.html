@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>3D India Map - Bharat Ka Zaika</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: radial-gradient(ellipse at center, #f0f0f0 0%, #d8d8d8 50%, #c0c0c0 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            background: radial-gradient(ellipse at center, #e8e8e8 0%, #d0d0d0 100%);
+            border-radius: 20px;
+            box-shadow: 
+                0 30px 80px rgba(0,0,0,0.25),
+                0 10px 30px rgba(0,0,0,0.15),
+                inset 0 2px 10px rgba(255,255,255,0.5);
+        }
+        
+        .map-svg {
+            width: 100%;
+            height: auto;
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.3));
+        }
+        
+        /* 3D State Effect */
+        .state-shadow {
+            fill: #b0b0b0;
+            stroke: #999;
+            stroke-width: 0.5;
+            filter: url(#shadow-filter);
+        }
+        
+        .state {
+            fill: #fafafa;
+            stroke: #aaa;
+            stroke-width: 0.8;
+            filter: drop-shadow(3px 5px 8px rgba(0,0,0,0.3));
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .state:hover {
+            fill: #FF6B35;
+            stroke: #cc4400;
+            stroke-width: 1.2;
+            filter: drop-shadow(5px 8px 15px rgba(255,107,53,0.5));
+        }
+        
+        .state.selected {
+            fill: #FF6B35;
+            stroke: #cc4400;
+            stroke-width: 1.5;
+            filter: drop-shadow(6px 10px 20px rgba(255,107,53,0.6));
+        }
+        
+        .state-label {
+            font-size: 8px;
+            fill: #333;
+            font-weight: 600;
+            pointer-events: none;
+            text-shadow: 0px 1px 2px rgba(255,255,255,0.8);
+        }
+        
+        .language-label {
+            font-size: 6px;
+            fill: #555;
+            font-weight: 500;
+            pointer-events: none;
+            font-style: italic;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #555;
+        }
+        
+        .legend-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid #aaa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .instructions {
+            margin-top: 15px;
+            color: #888;
+            font-size: 11px;
+        }
+        
+        /* Popup */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(145deg, #ffffff, #f5f5f5);
+            border-radius: 25px;
+            padding: 30px;
+            width: 90%;
+            max-width: 340px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 
+                0 25px 80px rgba(0,0,0,0.35),
+                0 0 0 1px rgba(255,255,255,0.5) inset;
+            animation: popIn 0.4s ease;
+        }
+        
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+            70% { transform: translate(-50%, -50%) scale(1.03); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .popup h2 {
+            color: #444;
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .popup .native {
+            font-size: 32px;
+            color: #FF6B35;
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(145deg, #fafafa, #f0f0f0);
+            border-radius: 15px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .popup p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .popup-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-yes {
+            background: linear-gradient(145deg, #FF6B35, #E65100);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,107,53,0.4);
+        }
+        
+        .btn-yes:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,107,53,0.5);
+        }
+        
+        .btn-no {
+            background: linear-gradient(145deg, #e8e8e8, #d8d8d8);
+            color: #555;
+        }
+        
+        .btn-no:hover {
+            background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
+        }
+        
+        .particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 5px; height: 5px;
+            background: #FF6B35;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 10s linear infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(100vh); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        @media (max-width: 480px) {
+            .state-label { font-size: 6px; }
+            .language-label { font-size: 4px; }
+            h1 { font-size: 18px; }
+            .map-container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <h1>🇮🇳 भारत का जायका</h1>
+    <p class="subtitle">Tap your state • अपना राज्य चुनें</p>
+    
+    <div class="map-container">
+        <svg class="map-svg" viewBox="0 0 500 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="shadow-filter" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="4" dy="5" stdDeviation="3" flood-color="#888" flood-opacity="0.5"/>
+                </filter>
+            </defs>
+            
+            <!-- Jammu & Kashmir -->
+            <path class="state" id="jk" d="M80,15 L120,12 L145,25 L155,50 L145,75 L115,80 L85,65 L70,40 Z" onclick="selectState('jk')"/>
+            <text class="state-label" x="110" y="45">Jammu & Kashmir</text>
+            <text class="language-label" x="110" y="55">कॉशुर</text>
+            
+            <!-- Himachal Pradesh -->
+            <path class="state" id="hp" d="M115,60 L145,58 L155,80 L145,100 L115,98 L100,80 Z" onclick="selectState('hp')"/>
+            <text class="state-label" x="128" y="82">HP</text>
+            <text class="language-label" x="128" y="90">हिंदी</text>
+            
+            <!-- Punjab -->
+            <path class="state" id="pb" d="M70,85 L110,80 L120,110 L110,140 L80,145 L60,125 L58,100 Z" onclick="selectState('pb')"/>
+            <text class="state-label" x="88" y="115">Punjab</text>
+            <text class="language-label" x="88" y="125">ਪੰਜਾਬੀ</text>
+            
+            <!-- Chandigarh -->
+            <circle class="state" id="ch" cx="100" cy="120" r="5" onclick="selectState('ch')"/>
+            
+            <!-- Haryana -->
+            <path class="state" id="hr" d="M85,140 L120,135 L130,160 L118,185 L90,188 L78,165 Z" onclick="selectState('hr')"/>
+            <text class="state-label" x="102" y="165">Haryana</text>
+            <text class="language-label" x="102" y="175">हिंदी</text>
+            
+            <!-- Uttarakhand -->
+            <path class="state" id="uk" d="M145,85 L175,82 L185,115 L172,145 L145,142 L135,115 Z" onclick="selectState('uk')"/>
+            <text class="state-label" x="160" y="118">Uttarakhand</text>
+            <text class="language-label" x="160" y="130">हिंदी</text>
+            
+            <!-- Delhi -->
+            <path class="state" id="dl" d="M118,175 L138,172 L142,192 L128,198 L118,192 Z" onclick="selectState('dl')"/>
+            <text class="state-label" x="128" y="188">Delhi</text>
+            <text class="language-label" x="128" y="196">हिंदी</text>
+            
+            <!-- Uttar Pradesh -->
+            <path class="state" id="up" d="M155,130 L230,125 L250,170 L245,230 L200,260 L155,250 L140,200 Z" onclick="selectState('up')"/>
+            <text class="state-label" x="195" y="195">Uttar Pradesh</text>
+            <text class="language-label" x="195" y="208">हिंदी</text>
+            
+            <!-- Bihar -->
+            <path class="state" id="br" d="M245,155 L290,150 L305,185 L295,230 L255,240 L240,200 Z" onclick="selectState('br')"/>
+            <text class="state-label" x="270" y="195">Bihar</text>
+            <text class="language-label" x="270" y="208">मैथिली</text>
+            
+            <!-- Rajasthan -->
+            <path class="state" id="rj" d="M40,180 L95,172 L120,210 L125,290 L100,350 L55,355 L25,310 L20,240 L28,195 Z" onclick="selectState('rj')"/>
+            <text class="state-label" x="72" y="270">Rajasthan</text>
+            <text class="language-label" x="72" y="283">हिंदी</text>
+            
+            <!-- Sikkim -->
+            <path class="state" id="sk" d="M295,215 L315,212 L320,235 L305,245 L292,235 Z" onclick="selectState('sk')"/>
+            <text class="state-label" x="305" y="232">Sikkim</text>
+            <text class="language-label" x="305" y="242">नेपाली</text>
+            
+            <!-- West Bengal -->
+            <path class="state" id="wb" d="M270,240 L310,235 L330,280 L320,330 L285,345 L262,320 L258,275 Z" onclick="selectState('wb')"/>
+            <text class="state-label" x="292" y="295">West Bengal</text>
+            <text class="language-label" x="292" y="308">বাংলা</text>
+            
+            <!-- Jharkhand -->
+            <path class="state" id="jh" d="M220,245 L258,240 L268,285 L260,330 L225,338 L205,295 Z" onclick="selectState('jh')"/>
+            <text class="state-label" x="238" y="295">Jharkhand</text>
+            <text class="language-label" x="238" y="308">हिंदी</text>
+            
+            <!-- Odisha -->
+            <path class="state" id="od" d="M235,335 L285,330 L300,380 L290,440 L255,460 L225,440 L218,385 Z" onclick="selectState('od')"/>
+            <text class="state-label" x="258" y="400">Odisha</text>
+            <text class="language-label" x="258" y="415">ଓଡ଼ିଆ</text>
+            
+            <!-- Gujarat -->
+            <path class="state" id="gj" d="M18,265 L70,255 L85,300 L78,365 L50,385 L18,365 L8,315 L10,280 Z" onclick="selectState('gj')"/>
+            <text class="state-label" x="50" y="325">Gujarat</text>
+            <text class="language-label" x="50" y="340">ગુજરાતી</text>
+            
+            <!-- D&N Haveli -->
+            <circle class="state" id="dn" cx="80" cy="355" r="5" onclick="selectState('dn')"/>
+            
+            <!-- Maharashtra -->
+            <path class="state" id="mh" d="M85,355 L145,348 L175,400 L170,470 L135,500 L95,495 L70,450 L65,395 Z" onclick="selectState('mh')"/>
+            <text class="state-label" x="120" y="435">Maharashtra</text>
+            <text class="language-label" x="120" y="450">मराठी</text>
+            
+            <!-- Goa -->
+            <path class="state" id="ga" d="M108,468 L125,465 L128,485 L115,492 L105,485 Z" onclick="selectState('ga')"/>
+            <text class="state-label" x="115" y="480">Goa</text>
+            <text class="language-label" x="115" y="490">कोंकणी</text>
+            
+            <!-- Madhya Pradesh -->
+            <path class="state" id="mp" d="M140,260 L200,255 L225,300 L220,370 L180,395 L140,385 L125,330 Z" onclick="selectState('mp')"/>
+            <text class="state-label" x="172" y="335">Madhya Pradesh</text>
+            <text class="language-label" x="172" y="350">हिंदी</text>
+            
+            <!-- Chhattisgarh -->
+            <path class="state" id="cg" d="M200,355 L245,348 L265,400 L258,455 L218,475 L185,458 L178,405 Z" onclick="selectState('cg')"/>
+            <text class="state-label" x="222" y="418">Chhattisgarh</text>
+            <text class="language-label" x="222" y="433">हिंदी</text>
+            
+            <!-- Telangana -->
+            <path class="state" id="tg" d="M195,455 L245,448 L265,495 L258,545 L215,565 L188,550 L178,500 Z" onclick="selectState('tg')"/>
+            <text class="state-label" x="222" y="512">Telangana</text>
+            <text class="language-label" x="222" y="527">తెలుగు</text>
+            
+            <!-- Andhra Pradesh -->
+            <path class="state" id="ap" d="M215,560 L265,552 L290,595 L282,645 L245,668 L205,655 L188,605 Z" onclick="selectState('ap')"/>
+            <text class="state-label" x="238" y="615">AP</text>
+            <text class="language-label" x="238" y="628">తెలుగు</text>
+            
+            <!-- Karnataka -->
+            <path class="state" id="ka" d="M95,475 L155,468 L185,515 L178,575 L140,598 L100,585 L78,540 L72,495 Z" onclick="selectState('ka')"/>
+            <text class="state-label" x="130" y="542">Karnataka</text>
+            <text class="language-label" x="130" y="558">ಕನ್ನಡ</text>
+            
+            <!-- Kerala -->
+            <path class="state" id="kl" d="M108,575 L145,570 L155,610 L142,640 L118,645 L100,615 Z" onclick="selectState('kl')"/>
+            <text class="state-label" x="128" y="610">Kerala</text>
+            <text class="language-label" x="128" y="625">മലയാളം</text>
+            
+            <!-- Tamil Nadu -->
+            <path class="state" id="tn" d="M155,560 L210,550 L235,595 L222,650 L185,672 L155,658 L142,605 Z" onclick="selectState('tn')"/>
+            <text class="state-label" x="188" y="615">Tamil Nadu</text>
+            <text class="language-label" x="188" y="632">தமிழ்</text>
+            
+            <!-- Puducherry -->
+            <circle class="state" id="py" cx="175" cy="635" r="4" onclick="selectState('py')"/>
+            
+            <!-- Northeast States -->
+            <!-- Assam -->
+            <path class="state" id="as" d="M340,175 L395,168 L430,190 L440,230 L405,250 L355,242 L332,210 Z" onclick="selectState('as')"/>
+            <text class="state-label" x="385" y="212">Assam</text>
+            <text class="language-label" x="385" y="225">অসমীয়া</text>
+            
+            <!-- Meghalaya -->
+            <path class="state" id="ml" d="M305,215 L335,210 L345,240 L335,265 L308,262 L295,240 Z" onclick="selectState('ml')"/>
+            <text class="state-label" x="318" y="243">Meghalaya</text>
+            <text class="language-label" x="318" y="255">English</text>
+            
+            <!-- Arunachal Pradesh -->
+            <path class="state" id="ar" d="M390,130 L445,122 L485,150 L490,195 L455,220 L398,210 L375,175 Z" onclick="selectState('ar')"/>
+            <text class="state-label" x="432" y="175">Arunachal</text>
+            <text class="language-label" x="432" y="190">English</text>
+            
+            <!-- Nagaland -->
+            <path class="state" id="nl" d="M430,200 L455,195 L462,225 L448,238 L428,230 Z" onclick="selectState('nl')"/>
+            <text class="state-label" x="443" y="220">Nagaland</text>
+            <text class="language-label" x="443" y="233">English</text>
+            
+            <!-- Manipur -->
+            <path class="state" id="mn" d="M448,238 L472,232 L482,265 L468,285 L448,278 Z" onclick="selectState('mn')"/>
+            <text class="state-label" x="462" y="262">Manipur</text>
+            <text class="language-label" x="462" y="275">মৈতৈলোন</text>
+            
+            <!-- Mizoram -->
+            <path class="state" id="mz" d="M360,285 L395,280 L408,315 L395,345 L362,342 L348,315 Z" onclick="selectState('mz')"/>
+            <text class="state-label" x="378" y="318">Mizoram</text>
+            <text class="language-label" x="378" y="332">Mizo</text>
+            
+            <!-- Tripura -->
+            <path class="state" id="tr" d="M340,288 L365,285 L372,315 L360,338 L338,332 Z" onclick="selectState('tr')"/>
+            <text class="state-label" x="352" y="315">Tripura</text>
+            <text class="language-label" x="352" y="328">বাংলা</text>
+            
+            <!-- Andaman & Nicobar -->
+            <ellipse class="state" id="an" cx="370" cy="520" rx="12" ry="18" onclick="selectState('an')"/>
+            <text class="state-label" x="370" y="525">A&N</text>
+            
+            <!-- Lakshadweep -->
+            <ellipse class="state" id="ld" cx="45" cy="520" rx="8" ry="14" onclick="selectState('ld')"/>
+            <text class="state-label" x="45" y="524">Lakshadweep</text>
+        </svg>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-box" style="background: #fafafa;"></div>
+            <span>North</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #f5f5f5;"></div>
+            <span>South</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #f0f0f0;"></div>
+            <span>East</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #eaeaea;"></div>
+            <span>West</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-box" style="background: #e5e5e5;"></div>
+            <span>NE</span>
+        </div>
+    </div>
+    
+    <p class="instructions">Click any state to select language</p>
+    
+    <div class="overlay" id="overlay" onclick="closePopup()"></div>
+    
+    <div class="popup" id="popup">
+        <h2 id="popupTitle">📍 Select State</h2>
+        <div class="native" id="popupNative">राज्य का नाम</div>
+        <p id="popupQuestion">इस भाषा में रेसिपी देखना चाहते हैं?</p>
+        <div class="popup-buttons">
+            <button class="btn btn-yes" onclick="confirmLanguage()">✅ हाँ</button>
+            <button class="btn btn-no" onclick="closePopup()">❌ नहीं</button>
+        </div>
+    </div>
+    
+    <script>
+        const stateData = {
+            jk: { name: "Jammu & Kashmir", lang: "Kashmiri", native: "कॉशुर", code: "ks" },
+            hp: { name: "Himachal Pradesh", lang: "Hindi", native: "हिमाचल प्रदेश", code: "hi" },
+            pb: { name: "Punjab", lang: "Punjabi", native: "ਪੰਜਾਬੀ", code: "pa" },
+            ch: { name: "Chandigarh", lang: "Hindi", native: "चंडीगढ़", code: "hi" },
+            hr: { name: "Haryana", lang: "Hindi", native: "हरियाणा", code: "hi" },
+            uk: { name: "Uttarakhand", lang: "Hindi", native: "उत्तराखंड", code: "hi" },
+            dl: { name: "Delhi", lang: "Hindi", native: "दिल्ली", code: "hi" },
+            up: { name: "Uttar Pradesh", lang: "Hindi", native: "उत्तर प्रदेश", code: "hi" },
+            br: { name: "Bihar", lang: "Maithili", native: "मैथिली", code: "mai" },
+            rj: { name: "Rajasthan", lang: "Hindi", native: "राजस्थान", code: "hi" },
+            sk: { name: "Sikkim", lang: "Nepali", native: "नेपाली", code: "ne" },
+            wb: { name: "West Bengal", lang: "Bengali", native: "বাংলা", code: "bn" },
+            jh: { name: "Jharkhand", lang: "Hindi", native: "झारखंड", code: "hi" },
+            od: { name: "Odisha", lang: "Odia", native: "ଓଡ଼ିଆ", code: "or" },
+            gj: { name: "Gujarat", lang: "Gujarati", native: "ગુજરાતી", code: "gu" },
+            dn: { name: "D&N Haveli", lang: "Gujarati", native: "દામણ અને દીવ", code: "gu" },
+            mh: { name: "Maharashtra", lang: "Marathi", native: "मराठी", code: "mr" },
+            ga: { name: "Goa", lang: "Konkani", native: "कोंकणी", code: "kok" },
+            mp: { name: "Madhya Pradesh", lang: "Hindi", native: "मध्य प्रदेश", code: "hi" },
+            cg: { name: "Chhattisgarh", lang: "Hindi", native: "छत्तीसगढ़", code: "hi" },
+            tg: { name: "Telangana", lang: "Telugu", native: "తెలుగు", code: "te" },
+            ap: { name: "Andhra Pradesh", lang: "Telugu", native: "ఆంధ్రప్రదేశ్", code: "te" },
+            ka: { name: "Karnataka", lang: "Kannada", native: "ಕನ್ನಡ", code: "kn" },
+            kl: { name: "Kerala", lang: "Malayalam", native: "മലയാളം", code: "ml" },
+            tn: { name: "Tamil Nadu", lang: "Tamil", native: "தமிழ்நாடு", code: "ta" },
+            py: { name: "Puducherry", lang: "Tamil", native: "புதுச்சேரி", code: "ta" },
+            as: { name: "Assam", lang: "Assamese", native: "অসমীয়া", code: "as" },
+            ml: { name: "Meghalaya", lang: "English", native: "English", code: "en" },
+            ar: { name: "Arunachal Pradesh", lang: "English", native: "English", code: "en" },
+            nl: { name: "Nagaland", lang: "English", native: "English", code: "en" },
+            mn: { name: "Manipur", lang: "Manipuri", native: "মৈতৈলোন", code: "mni" },
+            mz: { name: "Mizoram", lang: "Mizo", native: "Mizo", code: "lus" },
+            tr: { name: "Tripura", lang: "Bengali", native: "বাংলা", code: "bn" },
+            an: { name: "Andaman & Nicobar", lang: "Hindi", native: "अंडमान और निकोबार", code: "hi" },
+            ld: { name: "Lakshadweep", lang: "Malayalam", native: "ലക്ഷദ്വീപ്", code: "ml" }
+        };
+        
+        let selectedState = null;
+        
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 12; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDuration = (8 + Math.random() * 6) + 's';
+                p.style.animationDelay = (Math.random() * 5) + 's';
+                container.appendChild(p);
+            }
+        }
+        createParticles();
+        
+        function selectState(stateId) {
+            const state = stateData[stateId];
+            if (!state) return;
+            
+            selectedState = stateId;
+            
+            document.querySelectorAll('.state').forEach(s => s.classList.remove('selected'));
+            document.getElementById(stateId).classList.add('selected');
+            
+            document.getElementById('popupTitle').textContent = '📍 ' + state.name;
+            document.getElementById('popupNative').textContent = state.native;
+            document.getElementById('popupQuestion').textContent = state.lang + ' में रेसिपी देखना चाहते हैं?';
+            
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+            
+            if (window.AndroidBridge) {
+                window.AndroidBridge.onStateSelected(stateId, state.name);
+            }
+        }
+        
+        function confirmLanguage() {
+            closePopup();
+            if (selectedState && window.AndroidBridge) {
+                const state = stateData[selectedState];
+                window.AndroidBridge.onLanguageSelected(selectedState, state.code);
+            }
+        }
+        
+        function closePopup() {
+            document.getElementById('popup').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            document.querySelectorAll('.state').forEach(s => s.classList.remove('selected'));
+            
+            if (selectedState && window.AndroidBridge) {
+                const state = stateData[selectedState];
+                window.AndroidBridge.onStateConfirmed(selectedState, state.code);
+            }
+        }
+    </script>
+</body>
+</html>

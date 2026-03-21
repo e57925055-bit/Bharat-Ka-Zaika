@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors - Warm Orange Theme -->
+    <color name="primary">#E65100</color>
+    <color name="primary_dark">#BF360C</color>
+    <color name="primary_light">#FF6D00</color>
+    <color name="secondary">#FF6D00</color>
+    
+    <!-- Background -->
+    <color name="background">#FFF3E0</color>
+    <color name="background_dark">#1a1a2e</color>
+    <color name="surface">#FFFFFF</color>
+    
+    <!-- Text -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_gold">#FFD700</color>
+    
+    <!-- Status -->
+    <color name="veg_color">#4CAF50</color>
+    <color name="nonveg_color">#F44336</color>
+    
+    <!-- Flame Colors -->
+    <color name="flame_high">#F44336</color>
+    <color name="flame_medium">#FFC107</color>
+    <color name="flame_low">#4CAF50</color>
+    <color name="flame_none">#9E9E9E</color>
+    
+    <!-- Region Colors -->
+    <color name="region_north">#FF9800</color>
+    <color name="region_south">#4CAF50</color>
+    <color name="region_east">#2196F3</color>
+    <color name="region_west">#FF5722</color>
+    <color name="region_northeast">#9C27B0</color>
+    <color name="region_central">#F44336</color>
+    
+    <!-- Card -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="card_shadow">#1A000000</color>
+    
+    <!-- Difficulty -->
+    <color name="difficulty_easy">#4CAF50</color>
+    <color name="difficulty_medium">#FF9800</color>
+    <color name="difficulty_hard">#F44336</color>
+</resources>

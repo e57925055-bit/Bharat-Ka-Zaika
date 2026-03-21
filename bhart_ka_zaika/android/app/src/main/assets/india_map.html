@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Interactive India Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial Unicode MS', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .map-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #2d4a3e 0%, #1a2f23 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            padding: 20px;
+        }
+        
+        .india-map {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .state {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            stroke: #fff;
+            stroke-width: 1;
+        }
+        
+        .state:hover, .state.active {
+            filter: url(#glow);
+            transform-origin: center;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px currentColor); }
+            50% { filter: drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px currentColor); }
+        }
+        
+        .state-label {
+            pointer-events: none;
+            font-size: 8px;
+            fill: white;
+            font-weight: bold;
+            text-anchor: middle;
+            opacity: 0.9;
+        }
+        
+        .north { fill: #FF9933; }
+        .south { fill: #138808; }
+        .east { fill: #000080; }
+        .west { fill: #FF6600; }
+        .northeast { fill: #9932CC; }
+        .center { fill: #FFD700; }
+        .ut { fill: #C0C0C0; }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            border: 2px solid #FF9933;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        .tooltip.show {
+            opacity: 1;
+        }
+        
+        .tooltip .native-name {
+            font-size: 20px;
+            margin-top: 5px;
+            color: #FF9933;
+        }
+        
+        .zoom-controls {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .zoom-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: #FF9933;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        
+        .zoom-btn:hover {
+            background: #e68a00;
+            transform: scale(1.1);
+        }
+        
+        .instructions {
+            text-align: center;
+            color: #aaa;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .state-label { font-size: 5px; }
+            .zoom-controls { right: 10px; }
+            .zoom-btn { width: 40px; height: 40px; font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="map-container">
+            <svg class="india-map" viewBox="0 0 800 900" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                
+                <!-- Jammu & Kashmir -->
+                <path class="state north" id="jk" 
+                    d="M180,20 L220,15 L260,25 L290,40 L310,60 L300,90 L280,110 L250,105 L220,115 L190,100 L170,80 L160,50 Z"
+                    data-name="Jammu & Kashmir" data-language="Urdu" data-hindi="जम्मू और कश्मीर" data-bengali="জম্মু ও কাশ্মীর" data-tamil="ஜம்மு காஷ்மீர்" data-telugu="జమ్మూ కాశ్మీర్" data-marathi="जम्मू आणि काश्मीर" data-kannada="ಜಮ್ಮು ಮತ್ತು ಕಾಶ್ಮೀರ" data-malayalam="ജമ്മു കശ്മീർ" data-gujarati="જમ્મુ અને કાશ્મીર" data-punjabi="ਜੰਮੂ ਅਤੇ ਕਸ਼ਮੀਰ" data-urdu="جموں اور کشمیر"/>
+                
+                <!-- Himachal Pradesh -->
+                <path class="state north" id="hp" 
+                    d="M240,105 L270,100 L295,115 L300,140 L285,160 L260,165 L240,155 L225,135 Z"
+                    data-name="Himachal Pradesh" data-language="Hindi" data-hindi="हिमाचल प्रदेश" data-bengali="হিমাচল প্রদেশ" data-tamil="ஹிமாச்சல் பிரদেশ்" data-telugu="హిమాచల్ ప్రదేశ్" data-marathi="हिमाचल प्रदेश" data-kannada="ಹಿಮಾಚಲ ಪ್ರದೇಶ" data-malayalam="ഹിമാചൽ പ്രദേശ്" data-gujarati="હિમાચલ પ્રદેશ" data-punjabi="ਹਿਮਾਚਲ ਪ੍ਰਦੇਸ਼" data-urdu="ہماچل پردیش"/>
+                
+                <!-- Punjab -->
+                <path class="state north" id="pb" 
+                    d="M195,165 L225,160 L250,175 L255,210 L235,240 L200,245 L170,230 L165,195 Z"
+                    data-name="Punjab" data-language="Punjabi" data-hindi="पंजाब" data-bengali="পাঞ্জাব" data-tamil="பஞ்சாப்" data-telugu="పంజాబ్" data-marathi="पंजाब" data-kannada="ಪಂಜಾಬ್" data-malayalam="പഞ്ചാബ്" data-gujarati="પંજાબ" data-punjabi="ਪੰਜਾਬ" data-urdu="پنجاب"/>
+                
+                <!-- Uttarakhand -->
+                <path class="state north" id="uk" 
+                    d="M260,165 L295,160 L320,180 L325,215 L305,240 L275,235 L260,210 Z"
+                    data-name="Uttarakhand" data-language="Hindi" data-hindi="उत्तराखंड" data-bengali="উত্তরাখণ্ড" data-tamil="உத்தரகண்ட்" data-telugu="ఉత్తరాఖండ్" data-marathi="उत्तराखंड" data-kannada="ಉತ್ತರಾಖಂಡ್" data-malayalam="ഉത്തരാഖണ്ഡ്" data-gujarati="ઉત્તરાખંડ" data-punjabi="ਉਤਰਾਖੰਡ" data-urdu="اترکھنڈ"/>
+                
+                <!-- Haryana -->
+                <path class="state north" id="hr" 
+                    d="M200,245 L240,240 L265,265 L260,300 L225,310 L190,295 L185,265 Z"
+                    data-name="Haryana" data-language="Hindi" data-hindi="हरियाणा" data-bengali="হরিয়ানা" data-tamil="ஹரியானா" data-telugu="హర్యానా" data-marathi="हरियाणा" data-kannada="ಹರಿಯಾಣ" data-malayalam="ഹരിയാണ" data-gujarati="હરિયાણા" data-punjabi="ਹਰਿਆਣਾ" data-urdu="ہریانہ"/>
+                
+                <!-- Delhi -->
+                <path class="state north ut" id="dl" 
+                    d="M235,310 L260,305 L275,320 L270,340 L245,345 L225,330 Z"
+                    data-name="Delhi" data-language="Hindi" data-hindi="दिल्ली" data-bengali="দিল্লি" data-tamil="தில்லி" data-telugu="దిల్లీ" data-marathi="दिल्ली" data-kannada="ದೆಹಲಿ" data-malayalam="ഡെൽഹി" data-gujarati="દિલ્હી" data-punjabi="ਦਿੱਲੀ" data-urdu="دہلی"/>
+                
+                <!-- Rajasthan -->
+                <path class="state west" id="rj" 
+                    d="M120,300 L180,280 L240,285 L300,290 L330,320 L340,400 L320,480 L270,530 L200,520 L150,490 L100,420 L80,350 L90,310 Z"
+                    data-name="Rajasthan" data-language="Hindi" data-hindi="राजस्थान" data-bengali="রাজস্থান" data-tamil="ராஜஸ்தான்" data-telugu="రాజస్థాన్" data-marathi="राजस्थान" data-kannada="ರಾಜಸ್ಥಾನ" data-malayalam="രാജസ്ഥാൻ" data-gujarati="રાજસ્થાન" data-punjabi="ਰਾਜਸਥਾਨ" data-urdu="راجستھان"/>
+                
+                <!-- Uttar Pradesh -->
+                <path class="state north center" id="up" 
+                    d="M300,240 L340,235 L390,250 L420,290 L425,360 L400,420 L360,440 L310,420 L280,380 L270,320 Z"
+                    data-name="Uttar Pradesh" data-language="Hindi" data-hindi="उत्तर प्रदेश" data-bengali="উত্তর প্রদেশ" data-tamil="உத்தரப্রদேஷ்" data-telugu="ఉత్తరప్రదేశ్" data-marathi="उत्तर प्रदेश" data-kannada="ಉತ್ತರ ಪ್ರದೇಶ" data-malayalam="ഉത്തരാഖണ്ഡ്" data-gujarati="ઉત્તર પ્રદેશ" data-punjabi="ਉੱਤਰ ਪ੍ਰਦੇਸ਼" data-urdu="اترپردیش"/>
+                
+                <!-- Uttarakhand overlap fix -->
+                <path class="state north" id="ut-fix" 
+                    d="M275,235 L305,240 L315,270 L300,295 L275,290 L270,260 Z"
+                    data-name="Uttarakhand" data-language="Hindi" data-hindi="उत्तराखंड" data-bengali="উত্তরাখণ্ড" data-tamil="உத்தரகண்ட்" data-telugu="ఉత్తరాఖండ్" data-marathi="उत्तराखंड" data-kannada="ಉತ್ತರಾಖಂಡ್" data-malayalam="ഉത്തരാഖണ്ഡ്" data-gujarati="ઉત્તરાખંડ" data-punjabi="ਉਤਰਾਖੰਡ" data-urdu="اترکھنڈ"/>
+                
+                <!-- Bihar -->
+                <path class="state east" id="br" 
+                    d="M420,290 L470,280 L510,300 L520,350 L500,400 L460,410 L420,390 L415,350 Z"
+                    data-name="Bihar" data-language="Hindi" data-hindi="बिहार" data-bengali="বিহার" data-tamil="பீகார்" data-telugu="బీహార్" data-marathi="बिहार" data-kannada="ಬೀಹಾರ" data-malayalam="ബീഹാർ" data-gujarati="બિહાર" data-punjabi="ਬਿਹਾਰ" data-urdu="بہار"/>
+                
+                <!-- West Bengal -->
+                <path class="state east" id="wb" 
+                    d="M480,400 L520,390 L560,400 L580,440 L570,490 L540,510 L500,500 L480,460 Z"
+                    data-name="West Bengal" data-language="Bengali" data-hindi="पश्चिम बंगाल" data-bengali="পশ্চিমবঙ্গ" data-tamil="மேற்கு வங்காளம்" data-telugu="పశ్చిమ బెంగాల్" data-marathi="पश्चिम बंगाल" data-kannada="ಪಶ್ಚಿಮ ಬಂಗಾಳ" data-malayalam="പശ്ചിമ ബംഗാൾ" data-gujarati="પશ્ચિમ બંગાળ" data-punjabi="ਪੱਛਮੀ ਬੰਗਾਲ" data-urdu="مغربی بنگال"/>
+                
+                <!-- Odisha -->
+                <path class="state east" id="od" 
+                    d="M450,440 L500,435 L540,460 L550,520 L530,570 L480,580 L440,550 L430,490 Z"
+                    data-name="Odisha" data-language="Odia" data-hindi="ओडिशा" data-bengali="ওডিশা" data-tamil="ஒடிசா" data-telugu="ఒడిశా" data-marathi="ओडिशा" data-kannada="ಒಡಿಶಾ" data-malayalam="ഒഡിശ" data-gujarati="ઓડિશા" data-punjabi="ਓਡੀਸ਼ਾ" data-urdu="اوڈیشا"/>
+                
+                <!-- Jharkhand -->
+                <path class="state east center" id="jh" 
+                    d="M400,420 L445,415 L475,440 L470,490 L440,510 L400,495 L380,460 Z"
+                    data-name="Jharkhand" data-language="Hindi" data-hindi="झारखंड" data-bengali="ঝাড়খণ্ড" data-tamil="ஜார்கண்ட்" data-telugu="జార్ఖండ్" data-marathi="झारखंड" data-kannada="ಝಾರಖಂಡ" data-malayalam="ഝാർഖണ്ഡ്" data-gujarati="ઝારખંડ" data-punjabi="ਝਾਰਖੰਡ" data-urdu="جھارکھنڈ"/>
+                
+                <!-- Gujarat -->
+                <path class="state west" id="gj" 
+                    d="M60,420 L120,400 L180,420 L200,470 L190,530 L150,570 L100,560 L50,520 L40,470 Z"
+                    data-name="Gujarat" data-language="Gujarati" data-hindi="गुजरात" data-bengali="গুজরাট" data-tamil="குஜராத்" data-telugu="గుజరాత్" data-marathi="गुजरात" data-kannada="ಗುಜರಾತ್" data-malayalam="ഗുജറാത്ത്" data-gujarati="ગુજરાત" data-punjabi="ਗੁਜਰਾਤ" data-urdu="گجرات"/>
+                
+                <!-- Maharashtra -->
+                <path class="state west south" id="mh" 
+                    d="M180,530 L260,520 L340,530 L380,560 L390,620 L370,680 L320,700 L260,690 L200,660 L170,600 L160,550 Z"
+                    data-name="Maharashtra" data-language="Marathi" data-hindi="महाराष्ट्र" data-bengali="মহারাষ্ট্র" data-tamil="மகாராஷ்டிரா" data-telugu="మహారాష్ట్ర" data-marathi="महाराष्ट्र" data-kannada="ಮಹಾರಾಷ್ಟ್ರ" data-malayalam="മഹാരാഷ്ട്ര" data-gujarati="મહારાષ્ટ્ર" data-punjabi="ਮਹਾਰਾਸ਼ਟਰ" data-urdu="مہاراشٹر"/>
+                
+                <!-- Goa -->
+                <path class="state west south ut" id="ga" 
+                    d="M230,660 L260,655 L270,680 L255,700 L230,695 Z"
+                    data-name="Goa" data-language="Konkani" data-hindi="गोवा" data-bengali="গোয়া" data-tamil="கோவா" data-telugu="గోవా" data-marathi="गोवा" data-kannada="ಗೋವಾ" data-malayalam="ഗോവ" data-gujarati="ગોવા" data-punjabi="ਗੋਆ" data-urdu="گوا"/>
+                
+                <!-- Chhattisgarh -->
+                <path class="state center east" id="cg" 
+                    d="M360,480 L410,475 L450,510 L455,570 L430,620 L380,630 L340,600 L335,540 Z"
+                    data-name="Chhattisgarh" data-language="Hindi" data-hindi="छत्तीसगढ़" data-bengali="ছত্রিশগড়" data-tamil="சத்தீஸ்கர்" data-telugu="ఛత్తీస్‌గఢ్" data-marathi="छत्तीसगढ" data-kannada="ಛತ್ತೀಸ್‌ಗಢ" data-malayalam="ഛത്തീസ്‌ഗഡ്" data-gujarati="છત્તીસગઢ" data-punjabi="ਛੱਤੀਸਗੜ" data-urdu="چھتیسگڑھ"/>
+                
+                <!-- Madhya Pradesh -->
+                <path class="state center west" id="mp" 
+                    d="M270,420 L340,410 L390,440 L400,500 L380,560 L330,580 L270,560 L230,510 L240,460 Z"
+                    data-name="Madhya Pradesh" data-language="Hindi" data-hindi="मध्य प्रदेश" data-bengali="মধ্যপ্রদেশ" data-tamil="மத்திய பிரதேசம்" data-telugu="మధ్య ప్రదేశ్" data-marathi="मध्य प्रदेश" data-kannada="ಮಧ್ಯ ಪ್ರದೇಶ" data-malayalam="മധ്യ പ്രദേശ്" data-gujarati="મધ્ય પ્રદેશ" data-punjabi="ਮੱਧ ਪ੍ਰਦੇਸ਼" data-urdu="مادھیہ پردیش"/>
+                
+                <!-- Telangana -->
+                <path class="state south center" id="ts" 
+                    d="M370,600 L420,590 L470,610 L490,660 L470,710 L420,720 L370,700 L350,650 Z"
+                    data-name="Telangana" data-language="Telugu" data-hindi="तेलंगाना" data-bengali="তেলেঙ্গানা" data-tamil="தெலங்காணா" data-telugu="తెలంగాణ" data-marathi="तेलंगाणा" data-kannada="ತೆಲಂಗಾಣ" data-malayalam="തെലംഗാണ" data-gujarati="તેલંગાણા" data-punjabi="ਤੇਲੰਗਾਨਾ" data-urdu="تلنگانہ"/>
+                
+                <!-- Andhra Pradesh -->
+                <path class="state south" id="ap" 
+                    d="M350,650 L420,640 L490,660 L530,700 L540,760 L500,800 L440,810 L380,790 L340,740 L330,690 Z"
+                    data-name="Andhra Pradesh" data-language="Telugu" data-hindi="आंध्र प्रदेश" data-bengali="অন্ধ্র প্রদেশ" data-tamil="ஆந்திர பிரதேசம்" data-telugu="ఆంధ్ర ప్రదేశ్" data-marathi="आंध्र प्रदेश" data-kannada="ಆಂಧ್ರ ಪ್ರದೇಶ" data-malayalam="ആന്ധ്ര പ്രദേശ്" data-gujarati="આંધ્ર પ્રદેશ" data-punjabi="ਆਂਧਰ ਪ੍ਰਦੇਸ਼" data-urdu="آندھرا پردیش"/>
+                
+                <!-- Karnataka -->
+                <path class="state south" id="ka" 
+                    d="M200,680 L280,670 L360,680 L390,720 L385,790 L340,830 L280,840 L220,820 L180,770 L170,720 Z"
+                    data-name="Karnataka" data-language="Kannada" data-hindi="कर्नाटक" data-bengali="কর্ণাটক" data-tamil="கர்நாடகா" data-telugu="కర్నాటక" data-marathi="कर्नाटक" data-kannada="ಕರ್ನಾಟಕ" data-malayalam="കർണാടക" data-gujarati="કર્ણાટક" data-punjabi="ਕਰਨਾਟਕ" data-urdu="کرناٹک"/>
+                
+                <!-- Tamil Nadu -->
+                <path class="state south" id="tn" 
+                    d="M380,790 L440,810 L470,860 L450,900 L400,910 L360,890 L350,840 Z"
+                    data-name="Tamil Nadu" data-language="Tamil" data-hindi="तमिलनाडु" data-bengali="তামিলনাড়ু" data-tamil="தமிழ்நாடு" data-telugu="తమిళనాడు" data-marathi="तमिळनाडू" data-kannada="ತಮಿಳುನಾಡು" data-malayalam="തമിഴ്‌നാട്" data-gujarati="તમિલનાડુ" data-punjabi="ਤਮਿਲਨਾਡੂ" data-urdu="تمل ناڈو"/>
+                
+                <!-- Kerala -->
+                <path class="state south" id="kl" 
+                    d="M300,840 L340,835 L360,870 L350,910 L320,920 L290,900 L280,860 Z"
+                    data-name="Kerala" data-language="Malayalam" data-hindi="केरल" data-bengali="কেরালা" data-tamil="கேரளா" data-telugu="కేరళ" data-marathi="केरळ" data-kannada="ಕೇರಳ" data-malayalam="കേരള" data-gujarati="કેરળ" data-punjabi="ਕੇਰਲ" data-urdu="کیرلا"/>
+                
+                <!-- Sikkim -->
+                <path class="state northeast" id="sk" 
+                    d="M540,440 L570,435 L585,460 L575,485 L550,490 L535,470 Z"
+                    data-name="Sikkim" data-language="Nepali" data-hindi="सिक्किम" data-bengali="সিকিম" data-tamil="சிக்கிம்" data-telugu="సిక్కి" data-marathi="सिक्किम" data-kannada="ಸಿಕ್ಕಿಂ" data-malayalam="സിക്കിം" data-gujarati="સિક્કિમ" data-punjabi="ਸਿਕਕਿਮ" data-urdu="سکم"/>
+                
+                <!-- Assam -->
+                <path class="state northeast" id="as" 
+                    d="M570,350 L620,340 L680,350 L720,380 L730,420 L700,450 L650,455 L600,440 L570,410 L560,380 Z"
+                    data-name="Assam" data-language="Assamese" data-hindi="असम" data-bengali="অসম" data-tamil="அசாம்" data-telugu="అస్సామ్" data-marathi="आसाम" data-kannada="ಅಸ್ಸಾಂ" data-malayalam="അസം" data-gujarati="અસમ" data-punjabi="ਅਸਮ" data-urdu="آسام"/>
+                
+                <!-- Meghalaya -->
+                <path class="state northeast" id="ml" 
+                    d="M530,400 L570,395 L600,415 L595,450 L560,460 L525,445 Z"
+                    data-name="Meghalaya" data-language="English" data-hindi="मेघालय" data-bengali="মেঘালয়" data-tamil="மேகாலயா" data-telugu="మెఘాలయ" data-marathi="मेघालय" data-kannada="ಮೇಘಾಲಯ" data-malayalam="മേഘാലയ" data-gujarati="મેઘાલય" data-punjabi="ਮੇਘਾਲਯ" data-urdu="میگھالیہ"/>
+                
+                <!-- Arunachal Pradesh -->
+                <path class="state northeast" id="ar" 
+                    d="M620,280 L680,270 L750,290 L780,330 L770,380 L720,400 L670,395 L630,360 L610,320 Z"
+                    data-name="Arunachal Pradesh" data-language="English" data-hindi="अरुणाचल प्रदेश" data-bengali="অরুণাচল প্রদেশ" data-tamil="அருணாசல பிரதேசம்" data-telugu="అరుణాచల్ ప్రదేశ్" data-marathi="अरुणाचल प्रदेश" data-kannada="ಅರುಣಾಚಲ ಪ್ರದೇಶ" data-malayalam="അരുണാചല്‍ പ്രദേശ്" data-gujarati="અરુણાચલ પ્રદેશ" data-punjabi="ਅਰੁਣਾਚਲ ਪ੍ਰਦੇਸ਼" data-urdu="اروناچل پردیش"/>
+                
+                <!-- Nagaland -->
+                <path class="state northeast" id="nl" 
+                    d="M680,310 L720,305 L750,330 L745,365 L710,380 L680,370 Z"
+                    data-name="Nagaland" data-language="English" data-hindi="नागालैंड" data-bengali="নাগাল্যান্ড" data-tamil="நாகாலாந்து" data-telugu="నాగాలాండ్" data-marathi="नागालँड" data-kannada="ನಾಗಾಲ್ಯಾಂಡ್" data-malayalam="നാഗാലാൻഡ്" data-gujarati="નાગાલેન્ડ" data-punjabi="ਨਾਗਾਲੈਂਡ" data-urdu="نگالینڈ"/>
+                
+                <!-- Manipur -->
+                <path class="state northeast" id="mn" 
+                    d="M745,365 L775,360 L795,390 L785,420 L755,425 L740,400 Z"
+                    data-name="Manipur" data-language="Meitei" data-hindi="मणिपुर" data-bengali="মণিপুর" data-tamil="மணிப்பூர்" data-telugu="మణిపూర్" data-marathi="मणिपूर" data-kannada="ಮಣಿಪುರ" data-malayalam="മണിപ്പൂർ" data-gujarati="મણિપુર" data-punjabi="ਮਨੀਪੁਰ" data-urdu="منی پور"/>
+                
+                <!-- Mizoram -->
+                <path class="state northeast" id="mz" 
+                    d="M610,460 L660,455 L700,480 L695,520 L650,540 L605,525 Z"
+                    data-name="Mizoram" data-language="Mizo" data-hindi="मिजोरम" data-bengali="মিজোরাম" data-tamil="மிசோராம்" data-telugu="మిజోరం" data-marathi="मिझोराम" data-kannada="ಮಿಜೋರಾಂ" data-malayalam="മിസോറാം" data-gujarati="મિઝોરમ" data-punjabi="ਮਿਜੋਰਮ" data-urdu="میزورام"/>
+                
+                <!-- Tripura -->
+                <path class="state northeast" id="tr" 
+                    d="M580,490 L620,485 L640,515 L630,545 L595,550 L575,525 Z"
+                    data-name="Tripura" data-language="Bengali" data-hindi="त्रिपुरा" data-bengali="ত্রিপুরা" data-tamil="திருப்பூர்" data-telugu="త్రిపుర" data-marathi="त्रिपुरा" data-kannada="ತ್ರಿಪುರ" data-malayalam="ത്രിപുര" data-gujarati="ત્રિપુરા" data-punjabi="ਤ੍ਰਿਪੁਰਾ" data-urdu="تریپورہ"/>
+                
+                <!-- Ladakh -->
+                <path class="state north" id="la" 
+                    d="M120,30 L180,20 L240,35 L280,55 L275,90 L230,110 L170,100 L130,70 L115,45 Z"
+                    data-name="Ladakh" data-language="Ladakhi" data-hindi="लद्दाख" data-bengali="লাদাখ" data-tamil="லடாக்" data-telugu="లడఖ్" data-marathi="लडाख" data-kannada="ಲಡಾಖ್" data-malayalam="ലഡാഖ്" data-gujarati="લદ્દાખ" data-punjabi="ਲਦਾਖ" data-urdu="لداخ"/>
+                
+                <!-- Andaman & Nicobar (shown separately) -->
+                <ellipse class="state ut" id="an" cx="620" cy="780" rx="25" ry="35" 
+                    data-name="Andaman & Nicobar" data-language="Hindi" data-hindi="अंडमान और निकोबार" data-bengali="আন্দামান ও নিকোবর" data-tamil="அந்தமான் நிக்கோபார்" data-telugu="అండమాన్ నికోబార్" data-marathi="अंदमान आणि निकोबार" data-kannada="ಅಂಡಮಾನ್ ನಿಕೋಬಾರ್" data-malayalam="അന്ഡമാൻ നികോബാർ" data-gujarati="અંડમાન અને નિકોબાર" data-punjabi="ਅੰडमਾਨ ਅਤੇ ਨਿਕੋਬਾਰ" data-urdu="انڈمان اور نکوبار"/>
+                
+                <!-- Lakshadweep (shown separately) -->
+                <ellipse class="state ut" id="ld" cx="160" cy="860" rx="15" ry="25" 
+                    data-name="Lakshadweep" data-language="Malayalam" data-hindi="लक्षद्वीप" data-bengali="লক্ষদ্বীপ" data-tamil="லட்சத்தீவு" data-telugu="లక్షద్వీప్" data-marathi="लक्षद्वीप" data-kannada="ಲಕ್ಷದ್ವೀಪ" data-malayalam="ലക്ഷദ്വീപ്" data-gujarati="લક્ષદ્વીપ" data-punjabi="ਲਕਸ਼ਦੀਪ" data-urdu="لکشادویپ"/>
+                
+                <!-- Chandigarh -->
+                <circle class="state north ut" id="ch" cx="225" cy="195" r="8" 
+                    data-name="Chandigarh" data-language="Hindi" data-hindi="चंडीगढ़" data-bengali="চণ্ডীগড়" data-tamil="சண்டிகர்" data-telugu="చండీగఢ్" data-marathi="चंडीगढ" data-kannada="ಚಂಡೀಗ੢" data-malayalam="ചണ്ഡീഗࡡ" data-gujarati="ચંડીગઢ" data-punjabi="ਚੰਡੀਗੜ" data-urdu="چھنڈی گڑھ"/>
+                
+                <!-- Puducherry -->
+                <circle class="state south ut" id="py" cx="380" cy="875" r="8" 
+                    data-name="Puducherry" data-language="Tamil" data-hindi="पुडुucherry" data-bengali="পুদুচেরি" data-tamil="புதுச்சேரி" data-telugu="పుదুచேరి" data-marathi="पुडुucherry" data-kannada="ಪುದುಚೇರಿ" data-malayalam="പുതുച്ചേരി" data-gujarati="પુડુચેરી" data-punjabi="ਪੁਦੁਚੇਰੀ" data-urdu="پودوچیری"/>
+                
+                <!-- State Labels -->
+                <text class="state-label" x="220" y="55">J&K</text>
+                <text class="state-label" x="270" y="135">HP</text>
+                <text class="state-label" x="210" y="205">Punjab</text>
+                <text class="state-label" x="295" y="200">UK</text>
+                <text class="state-label" x="225" y="280">HR</text>
+                <text class="state-label" x="255" y="330">DL</text>
+                <text class="state-label" x="220" y="400">RJ</text>
+                <text class="state-label" x="360" y="340">UP</text>
+                <text class="state-label" x="470" y="350">BR</text>
+                <text class="state-label" x="530" y="460">WB</text>
+                <text class="state-label" x="490" y="520">OD</text>
+                <text class="state-label" x="435" y="465">JH</text>
+                <text class="state-label" x="120" y="490">GJ</text>
+                <text class="state-label" x="280" y="620">MH</text>
+                <text class="state-label" x="245" y="680">GA</text>
+                <text class="state-label" x="410" y="560">CG</text>
+                <text class="state-label" x="310" y="500">MP</text>
+                <text class="state-label" x="420" y="670">TS</text>
+                <text class="state-label" x="430" y="740">AP</text>
+                <text class="state-label" x="280" y="760">KA</text>
+                <text class="state-label" x="410" y="860">TN</text>
+                <text class="state-label" x="320" y="880">KL</text>
+                <text class="state-label" x="560" y="465">SK</text>
+                <text class="state-label" x="650" y="400">AS</text>
+                <text class="state-label" x="565" y="430">ML</text>
+                <text class="state-label" x="700" y="340">AR</text>
+                <text class="state-label" x="720" y="345">NL</text>
+                <text class="state-label" x="770" y="400">MN</text>
+                <text class="state-label" x="650" y="510">MZ</text>
+                <text class="state-label" x="610" y="520">TR</text>
+            </svg>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background:#FF9933"></div>
+                <span>North</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#138808"></div>
+                <span>South</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#000080"></div>
+                <span>East</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#FF6600"></div>
+                <span>West</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#9932CC"></div>
+                <span>Northeast</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background:#FFD700"></div>
+                <span>Central</span>
+            </div>
+        </div>
+        
+        <p class="instructions">Click or tap on any state to see its name in regional language</p>
+    </div>
+    
+    <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <button class="zoom-btn" onclick="resetZoom()" style="font-size:16px">↺</button>
+    </div>
+    
+    <div class="tooltip" id="tooltip">
+        <div class="state-name"></div>
+        <div class="native-name"></div>
+        <div class="language-info"></div>
+    </div>
+    
+    <script>
+        let currentScale = 1;
+        const mapContainer = document.querySelector('.map-container');
+        const svg = document.querySelector('.india-map');
+        const tooltip = document.getElementById('tooltip');
+        
+        document.querySelectorAll('.state').forEach(state => {
+            state.addEventListener('mouseenter', handleStateHover);
+            state.addEventListener('mouseleave', handleStateLeave);
+            state.addEventListener('click', handleStateClick);
+            state.addEventListener('touchstart', handleStateClick);
+        });
+        
+        function handleStateHover(e) {
+            const state = e.target;
+            state.classList.add('active');
+            state.style.filter = 'url(#strongGlow)';
+            state.style.transform = 'scale(1.02)';
+            
+            const rect = state.getBoundingClientRect();
+            tooltip.querySelector('.state-name').textContent = state.dataset.name;
+            tooltip.querySelector('.native-name').textContent = state.dataset.hindi;
+            tooltip.querySelector('.language-info').textContent = 'Language: ' + state.dataset.language;
+            tooltip.style.left = rect.left + rect.width / 2 - 100 + 'px';
+            tooltip.style.top = rect.top - 80 + 'px';
+            tooltip.classList.add('show');
+        }
+        
+        function handleStateLeave(e) {
+            const state = e.target;
+            state.classList.remove('active');
+            state.style.filter = '';
+            state.style.transform = '';
+            tooltip.classList.remove('show');
+        }
+        
+        function handleStateClick(e) {
+            e.preventDefault();
+            const state = e.target;
+            
+            if (window.Android) {
+                window.Android.onStateClicked(
+                    state.dataset.name,
+                    state.dataset.language,
+                    state.dataset.hindi,
+                    state.dataset.bengali,
+                    state.dataset.tamil,
+                    state.dataset.telugu,
+                    state.dataset.marathi,
+                    state.dataset.kannada,
+                    state.dataset.malayalam,
+                    state.dataset.gujarati,
+                    state.dataset.punjabi,
+                    state.dataset.urdu
+                );
+            } else {
+                alert('State: ' + state.dataset.name + '\n' +
+                      'Language: ' + state.dataset.language + '\n\n' +
+                      'Change language to ' + state.dataset.language + '?');
+            }
+        }
+        
+        function zoomIn() {
+            currentScale = Math.min(currentScale + 0.2, 5);
+            applyZoom();
+        }
+        
+        function zoomOut() {
+            currentScale = Math.max(currentScale - 0.2, 0.5);
+            applyZoom();
+        }
+        
+        function resetZoom() {
+            currentScale = 1;
+            applyZoom();
+        }
+        
+        function applyZoom() {
+            svg.style.transform = 'scale(' + currentScale + ')';
+            svg.style.transformOrigin = 'center center';
+        }
+        
+        let touchStartDistance = 0;
+        
+        document.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                touchStartDistance = getDistance(e.touches[0], e.touches[1]);
+            }
+        });
+        
+        document.addEventListener('touchmove', e => {
+            if (e.touches.length === 2) {
+                const currentDistance = getDistance(e.touches[0], e.touches[1]);
+                const scale = currentDistance / touchStartDistance;
+                currentScale = Math.max(0.5, Math.min(currentScale * scale, 5));
+                applyZoom();
+                touchStartDistance = currentDistance;
+            }
+        });
+        
+        function getDistance(touch1, touch2) {
+            return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+        }
+        
+        let isDragging = false;
+        let startX, startY, scrollLeft, scrollTop;
+        
+        mapContainer.addEventListener('mousedown', e => {
+            isDragging = true;
+            startX = e.pageX - mapContainer.offsetLeft;
+            startY = e.pageY - mapContainer.offsetTop;
+            mapContainer.style.cursor = 'grabbing';
+        });
+        
+        mapContainer.addEventListener('mouseleave', () => {
+            isDragging = false;
+            mapContainer.style.cursor = 'grab';
+        });
+        
+        mapContainer.addEventListener('mouseup', () => {
+            isDragging = false;
+            mapContainer.style.cursor = 'grab';
+        });
+        
+        mapContainer.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - mapContainer.offsetLeft;
+            const y = e.pageY - mapContainer.offsetTop;
+            mapContainer.scrollLeft = scrollLeft - (x - startX);
+            mapContainer.scrollTop = scrollTop - (y - startY);
+        });
+        
+        mapContainer.addEventListener('scroll', function() {
+            scrollLeft = mapContainer.scrollLeft;
+            scrollTop = mapContainer.scrollTop;
+        });
+    </script>
+</body>
+</html>
